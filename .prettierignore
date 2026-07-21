@@ -1,0 +1,13 @@
+.next
+.turbo
+coverage
+dist
+node_modules
+pnpm-lock.yaml
+apps/api/src/generated/prisma
+AI_ENGINE_SPEC.md
+DATABASE_DESIGN.md
+DEVELOPMENT_GUIDELINES.md
+LEARNING_ENGINE_SPEC.md
+MASTER_SPEC.md
+SYSTEM_ARCHITECTURE.md

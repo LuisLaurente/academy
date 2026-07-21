@@ -1,0 +1,41 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["eslint.config.mjs", "prettier.config.mjs", "tsconfig.base.json"],
+  "globalEnv": [
+    "API_PORT",
+    "BULLMQ_PREFIX",
+    "CORS_ORIGIN",
+    "DATABASE_URL",
+    "NEXT_PUBLIC_API_URL",
+    "NODE_ENV",
+    "REDIS_URL"
+  ],
+  "ui": "tui",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+    "lint:fix": {
+      "dependsOn": ["^lint:fix"],
+      "cache": false
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "@learning-os/contracts#build": { "outputs": [] },
+    "@learning-os/ui#build": { "outputs": [] }
+  }
+}

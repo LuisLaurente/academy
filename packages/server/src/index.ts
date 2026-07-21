@@ -1,0 +1,16 @@
+export {
+  AdministrationModule,
+  AiContentModule,
+  AnalyticsModule,
+  ContentModule,
+  CurriculumModule,
+  EvaluationModule,
+  GamificationModule,
+  IdentityAccessModule,
+  MasteryModule,
+  NotificationsModule,
+  PracticeModule,
+  ReviewModule,
+  StudyActivityModule,
+  UserProfileModule,
+} from './modules.js';

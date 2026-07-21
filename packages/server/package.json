@@ -1,0 +1,35 @@
+{
+  "name": "@learning-os/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint src --max-warnings=0",
+    "lint:fix": "eslint src --fix",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@nestjs/common": "11.1.28"
+  },
+  "devDependencies": {
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  },
+  "peerDependencies": {
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.0"
+  }
+}

@@ -39,6 +39,10 @@
     "./evaluation": {
       "types": "./dist/modules/evaluation/index.d.ts",
       "default": "./dist/modules/evaluation/index.js"
+    },
+    "./learning": {
+      "types": "./dist/modules/learning/index.d.ts",
+      "default": "./dist/modules/learning/index.js"
     }
   },
   "scripts": {

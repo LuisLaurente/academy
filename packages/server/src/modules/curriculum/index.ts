@@ -60,3 +60,4 @@ export {
   TopicDescription,
   TopicName,
 } from './domain/value-objects/curriculum-value-objects.js';
+export { CurriculumItemId } from './domain/identifiers/curriculum-ids.js';

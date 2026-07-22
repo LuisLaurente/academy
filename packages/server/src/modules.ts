@@ -41,3 +41,6 @@ export class NotificationsModule {}
 
 @Module({})
 export class AdministrationModule {}
+
+@Module({})
+export class LearningModule {}

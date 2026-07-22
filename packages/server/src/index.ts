@@ -7,6 +7,7 @@ export {
   EvaluationModule,
   GamificationModule,
   IdentityAccessModule,
+  LearningModule,
   MasteryModule,
   NotificationsModule,
   PracticeModule,

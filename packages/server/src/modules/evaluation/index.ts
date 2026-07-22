@@ -62,3 +62,4 @@ export {
   InMemoryEvaluationRepository,
   InMemoryEvaluationUnitOfWork,
 } from './infrastructure/testing/fake-evaluation.js';
+export type { EvaluationResultSnapshot } from './domain/contracts/evaluation-contracts.js';

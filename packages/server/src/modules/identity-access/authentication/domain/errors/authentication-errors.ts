@@ -55,6 +55,27 @@ export class ExpiredTokenError extends AuthenticationError<'authentication.expir
   }
 }
 
+export class InvalidTokenError extends AuthenticationError<'authentication.invalid-token'> {
+  constructor() {
+    super({
+      category: 'validation',
+      code: 'authentication.invalid-token',
+      message: 'The supplied token is invalid.',
+    });
+  }
+}
+
+export class InvalidAuthenticationStateError extends AuthenticationError<'authentication.invalid-state'> {
+  constructor(reason: string) {
+    super({
+      category: 'invariant',
+      code: 'authentication.invalid-state',
+      context: { reason },
+      message: 'Authentication state violates a domain invariant.',
+    });
+  }
+}
+
 export class InvalidEmailError extends AuthenticationError<'authentication.invalid-email'> {
   constructor() {
     super({

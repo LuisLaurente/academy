@@ -20,6 +20,10 @@ describe('environment configuration', () => {
     expect(environment.AUTH_ACCESS_TOKEN_TTL_SECONDS).toBe(900);
     expect(environment.AUTH_REFRESH_TOKEN_TTL_SECONDS).toBe(2_592_000);
     expect(environment.AUTH_PASSWORD_HASH_ALGORITHM).toBe('argon2id');
+    expect(environment.AUTH_ARGON2_MEMORY_COST_KIB).toBe(19_456);
+    expect(environment.AUTH_ARGON2_TIME_COST).toBe(2);
+    expect(environment.AUTH_ARGON2_PARALLELISM).toBe(1);
+    expect(environment.AUTH_ARGON2_HASH_LENGTH).toBe(32);
     expect(environment.AUTH_PASSWORD_MIN_LENGTH).toBe(12);
     expect(environment.AUTH_COOKIE_HTTP_ONLY).toBe(true);
     expect(environment.AUTH_COOKIE_SECURE).toBe(true);
@@ -41,6 +45,15 @@ describe('environment configuration', () => {
     ).toThrow();
     expect(() =>
       validateApiEnvironment({ ...validApiEnvironment, AUTH_PASSWORD_HASH_ALGORITHM: 'bcrypt' }),
+    ).toThrow();
+  });
+
+  it('rejects Argon2id parameters below the security baseline', () => {
+    expect(() =>
+      validateApiEnvironment({ ...validApiEnvironment, AUTH_ARGON2_MEMORY_COST_KIB: '8192' }),
+    ).toThrow();
+    expect(() =>
+      validateApiEnvironment({ ...validApiEnvironment, AUTH_ARGON2_TIME_COST: '1' }),
     ).toThrow();
   });
 

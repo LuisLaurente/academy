@@ -19,6 +19,26 @@
     "./authentication": {
       "types": "./dist/modules/identity-access/authentication/index.d.ts",
       "default": "./dist/modules/identity-access/authentication/index.js"
+    },
+    "./curriculum": {
+      "types": "./dist/modules/curriculum/index.d.ts",
+      "default": "./dist/modules/curriculum/index.js"
+    },
+    "./content": {
+      "types": "./dist/modules/content/index.d.ts",
+      "default": "./dist/modules/content/index.js"
+    },
+    "./ai-pipeline": {
+      "types": "./dist/modules/ai-pipeline/index.d.ts",
+      "default": "./dist/modules/ai-pipeline/index.js"
+    },
+    "./exercises": {
+      "types": "./dist/modules/exercises/index.d.ts",
+      "default": "./dist/modules/exercises/index.js"
+    },
+    "./evaluation": {
+      "types": "./dist/modules/evaluation/index.d.ts",
+      "default": "./dist/modules/evaluation/index.js"
     }
   },
   "scripts": {
@@ -32,10 +52,12 @@
     "dist"
   ],
   "dependencies": {
-    "@nestjs/common": "11.1.28"
+    "@nestjs/common": "11.1.28",
+    "argon2": "0.45.0"
   },
   "devDependencies": {
     "@types/node": "26.1.1",
+    "@vitest/coverage-v8": "4.1.10",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
     "typescript": "6.0.3",

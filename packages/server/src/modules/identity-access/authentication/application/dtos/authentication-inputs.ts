@@ -1,4 +1,4 @@
-import type { SessionId } from '../../domain/identifiers/authentication-ids.js';
+import type { SessionId, UserId } from '../../domain/identifiers/authentication-ids.js';
 
 export interface RegisterUserInput {
   readonly email: string;
@@ -20,4 +20,23 @@ export interface RefreshSessionInput {
 
 export interface ValidateAccessTokenInput {
   readonly accessToken: string;
+}
+
+export interface RegisterUserOutput {
+  readonly userId: UserId;
+}
+
+export interface AuthenticationTokensOutput {
+  readonly accessToken: string;
+  readonly accessTokenExpiresAt: Date;
+  readonly refreshToken: string;
+  readonly refreshTokenExpiresAt: Date;
+  readonly sessionId: SessionId;
+  readonly userId: UserId;
+}
+
+export interface ValidatedAccessTokenOutput {
+  readonly expiresAt: Date;
+  readonly sessionId: SessionId;
+  readonly userId: UserId;
 }

@@ -13,13 +13,25 @@ export interface AuthenticationCookieConfiguration {
 
 export interface AuthenticationConfiguration {
   readonly accessTokenDurationSeconds: number;
+  readonly argon2: Argon2Configuration;
   readonly cookies: AuthenticationCookieConfiguration;
   readonly minimumPasswordLength: number;
   readonly passwordHashingAlgorithm: PasswordHashingAlgorithm;
   readonly refreshTokenDurationSeconds: number;
 }
 
+export interface Argon2Configuration {
+  readonly hashLength: number;
+  readonly memoryCostKiB: number;
+  readonly parallelism: number;
+  readonly timeCost: number;
+}
+
 export interface AuthenticationConfigurationSource {
+  readonly AUTH_ARGON2_HASH_LENGTH: number;
+  readonly AUTH_ARGON2_MEMORY_COST_KIB: number;
+  readonly AUTH_ARGON2_PARALLELISM: number;
+  readonly AUTH_ARGON2_TIME_COST: number;
   readonly AUTH_ACCESS_TOKEN_TTL_SECONDS: number;
   readonly AUTH_COOKIE_ACCESS_NAME: string;
   readonly AUTH_COOKIE_DOMAIN?: string;
@@ -48,6 +60,12 @@ export function createAuthenticationConfiguration(
 
   return Object.freeze({
     accessTokenDurationSeconds: source.AUTH_ACCESS_TOKEN_TTL_SECONDS,
+    argon2: Object.freeze({
+      hashLength: source.AUTH_ARGON2_HASH_LENGTH,
+      memoryCostKiB: source.AUTH_ARGON2_MEMORY_COST_KIB,
+      parallelism: source.AUTH_ARGON2_PARALLELISM,
+      timeCost: source.AUTH_ARGON2_TIME_COST,
+    }),
     cookies,
     minimumPasswordLength: source.AUTH_PASSWORD_MIN_LENGTH,
     passwordHashingAlgorithm: source.AUTH_PASSWORD_HASH_ALGORITHM,

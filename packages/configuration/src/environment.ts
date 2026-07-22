@@ -34,6 +34,10 @@ export const apiEnvironmentSchema = z
       .max(31_536_000)
       .default(2_592_000),
     AUTH_PASSWORD_HASH_ALGORITHM: z.literal('argon2id').default('argon2id'),
+    AUTH_ARGON2_MEMORY_COST_KIB: z.coerce.number().int().min(19_456).max(1_048_576).default(19_456),
+    AUTH_ARGON2_TIME_COST: z.coerce.number().int().min(2).max(20).default(2),
+    AUTH_ARGON2_PARALLELISM: z.coerce.number().int().min(1).max(16).default(1),
+    AUTH_ARGON2_HASH_LENGTH: z.coerce.number().int().min(16).max(64).default(32),
     AUTH_PASSWORD_MIN_LENGTH: z.coerce.number().int().min(8).max(128).default(12),
     AUTH_COOKIE_ACCESS_NAME: z
       .string()

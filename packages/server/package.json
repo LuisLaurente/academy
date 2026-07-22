@@ -19,6 +19,22 @@
     "./authentication": {
       "types": "./dist/modules/identity-access/authentication/index.d.ts",
       "default": "./dist/modules/identity-access/authentication/index.js"
+    },
+    "./curriculum": {
+      "types": "./dist/modules/curriculum/index.d.ts",
+      "default": "./dist/modules/curriculum/index.js"
+    },
+    "./exercises": {
+      "types": "./dist/modules/exercises/index.d.ts",
+      "default": "./dist/modules/exercises/index.js"
+    },
+    "./evaluation": {
+      "types": "./dist/modules/evaluation/index.d.ts",
+      "default": "./dist/modules/evaluation/index.js"
+    },
+    "./learning": {
+      "types": "./dist/modules/learning/index.d.ts",
+      "default": "./dist/modules/learning/index.js"
     }
   },
   "scripts": {

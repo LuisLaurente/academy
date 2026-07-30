@@ -25,16 +25,17 @@ export class ContentController {
   @ApiOperation({ summary: 'Get a pedagogical content block by ID' })
   @ApiResponse({ status: 200, type: ContentBlockDto })
   async getBlockById(@Param('id') id: string): Promise<ContentBlockDto> {
-    if (!id) {
+    const block = await this.repository.findById(id);
+    if (!block) {
       throw new NotFoundException('Content block not found.');
     }
 
     return {
-      body: '# Domain-Driven Design Concepts\n\nDomain-Driven Design (DDD) focuses on complex business logic...',
-      contentType: 'text/markdown',
-      id,
-      title: 'Introduction to DDD',
-      version: '1.0.0',
+      body: block.body,
+      contentType: block.contentType,
+      id: block.id,
+      title: block.title,
+      version: block.version,
     };
   }
 
@@ -43,6 +44,13 @@ export class ContentController {
   @ApiOperation({ summary: 'Create or update a content block' })
   @ApiResponse({ status: 201, type: ContentBlockDto })
   async saveBlock(@Body() dto: ContentBlockDto): Promise<ContentBlockDto> {
+    await this.repository.save({
+      body: dto.body,
+      contentType: dto.contentType,
+      id: dto.id,
+      title: dto.title,
+      version: dto.version,
+    });
     return dto;
   }
 }

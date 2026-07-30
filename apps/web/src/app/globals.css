@@ -4,33 +4,41 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.985 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --border: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --radius: 0.625rem;
+  --background: #fdfbf7; /* Creme neutral */
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --primary: #ff5a5f; /* Coral red */
+  --primary-foreground: #ffffff;
+  --muted: #e2ece9; /* Sage pale */
+  --muted-foreground: #4a5553;
+  --border: #1a1a1a; /* Solid black */
+  --ring: #d90429; /* Crimson vibrant */
+  --radius: 1rem;
+
+  --sage-pale: #e2ece9;
+  --creme-neutral: #fdfbf7;
+  --coral-red: #ff5a5f;
+  --crimson-vibrant: #d90429;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --border: oklch(1 0 0 / 12%);
-  --ring: oklch(0.556 0 0);
+  --background: #141a18; /* Dark sage background */
+  --foreground: #fdfbf7;
+  --card: #1d2523;
+  --card-foreground: #fdfbf7;
+  --primary: #ff5a5f;
+  --primary-foreground: #ffffff;
+  --muted: #2a3633;
+  --muted-foreground: #a1b5b1;
+  --border: #fdfbf7;
+  --ring: #d90429;
 }
 
 @theme inline {
+  --font-sans: var(--font-plus-jakarta), sans-serif;
+  --font-display: var(--font-fredoka), sans-serif;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -41,9 +49,17 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+
+  --color-sage-pale: var(--sage-pale);
+  --color-creme-neutral: var(--creme-neutral);
+  --color-coral-red: var(--coral-red);
+  --color-crimson-vibrant: var(--crimson-vibrant);
+
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 3px);
   --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
 }
 
 * {
@@ -54,5 +70,68 @@ body {
   min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-plus-jakarta), var(--font-fredoka), sans-serif;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Custom Soft Neobrutalism Utilities */
+.shadow-neobrutalism {
+  box-shadow: 4px 4px 0px 0px rgba(26, 26, 26, 1);
+}
+
+.dark .shadow-neobrutalism {
+  box-shadow: 4px 4px 0px 0px rgba(253, 251, 247, 1);
+}
+
+.shadow-neobrutalism-lg {
+  box-shadow: 6px 6px 0px 0px rgba(26, 26, 26, 1);
+}
+
+.dark .shadow-neobrutalism-lg {
+  box-shadow: 6px 6px 0px 0px rgba(253, 251, 247, 1);
+}
+
+.shadow-neobrutalism-sm {
+  box-shadow: 2px 2px 0px 0px rgba(26, 26, 26, 1);
+}
+
+.dark .shadow-neobrutalism-sm {
+  box-shadow: 2px 2px 0px 0px rgba(253, 251, 247, 1);
+}
+
+.btn-neobrutalism {
+  border: 2px solid var(--border);
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-neobrutalism:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0px 0px rgba(26, 26, 26, 1);
+}
+
+.dark .btn-neobrutalism:hover {
+  box-shadow: 5px 5px 0px 0px rgba(253, 251, 247, 1);
+}
+
+.btn-neobrutalism:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px 0px rgba(26, 26, 26, 1);
+}
+
+.dark .btn-neobrutalism:active {
+  box-shadow: 2px 2px 0px 0px rgba(253, 251, 247, 1);
+}
+
+.bg-grid-pattern {
+  background-size: 30px 30px;
+  background-image:
+    linear-gradient(to right, rgba(26, 26, 26, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(26, 26, 26, 0.05) 1px, transparent 1px);
+}
+
+.dark .bg-grid-pattern {
+  background-image:
+    linear-gradient(to right, rgba(253, 251, 247, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(253, 251, 247, 0.04) 1px, transparent 1px);
 }

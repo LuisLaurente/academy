@@ -1,4 +1,4 @@
-import { apiFetch } from './api-client.js';
+import { apiFetch } from './api-client';
 
 export interface Exercise {
   readonly difficulty: string;

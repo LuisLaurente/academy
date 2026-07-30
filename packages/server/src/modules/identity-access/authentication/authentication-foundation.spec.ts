@@ -1,23 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
-import { CryptoUuidService } from '../../../core/identifiers/uuid-service.js';
 import {
   createAuthenticationConfiguration,
   type AuthenticationConfigurationSource,
 } from './configuration/authentication-configuration.js';
-import { SessionId } from './domain/identifiers/authentication-ids.js';
-import {
-  LoginUser,
-  LogoutUser,
-  RefreshSession,
-  RegisterUser,
-  ValidateAccessToken,
-} from './application/use-cases/authentication-use-cases.js';
-
-const uuidService = new CryptoUuidService();
 
 describe('authentication configuration', () => {
   const source: AuthenticationConfigurationSource = {
+    AUTH_ARGON2_HASH_LENGTH: 32,
+    AUTH_ARGON2_MEMORY_COST_KIB: 19_456,
+    AUTH_ARGON2_PARALLELISM: 1,
+    AUTH_ARGON2_TIME_COST: 2,
     AUTH_ACCESS_TOKEN_TTL_SECONDS: 900,
     AUTH_COOKIE_ACCESS_NAME: 'learning_os_access',
     AUTH_COOKIE_HTTP_ONLY: true,
@@ -35,6 +28,12 @@ describe('authentication configuration', () => {
 
     expect(configuration).toEqual({
       accessTokenDurationSeconds: 900,
+      argon2: {
+        hashLength: 32,
+        memoryCostKiB: 19_456,
+        parallelism: 1,
+        timeCost: 2,
+      },
       cookies: {
         accessTokenName: 'learning_os_access',
         httpOnly: true,
@@ -48,41 +47,7 @@ describe('authentication configuration', () => {
       refreshTokenDurationSeconds: 2_592_000,
     });
     expect(Object.isFrozen(configuration)).toBe(true);
+    expect(Object.isFrozen(configuration.argon2)).toBe(true);
     expect(Object.isFrozen(configuration.cookies)).toBe(true);
-  });
-});
-
-describe('pending authentication use cases', () => {
-  it.each([
-    {
-      execute: () =>
-        new RegisterUser().execute({ email: 'learner@example.com', password: 'secret' }),
-      name: 'RegisterUser',
-    },
-    {
-      execute: () => new LoginUser().execute({ email: 'learner@example.com', password: 'secret' }),
-      name: 'LoginUser',
-    },
-    {
-      execute: () =>
-        new LogoutUser().execute({ sessionId: SessionId.create(uuidService.generate()) }),
-      name: 'LogoutUser',
-    },
-    {
-      execute: () => new RefreshSession().execute({ refreshToken: 'opaque-refresh-token' }),
-      name: 'RefreshSession',
-    },
-    {
-      execute: () => new ValidateAccessToken().execute({ accessToken: 'opaque-access-token' }),
-      name: 'ValidateAccessToken',
-    },
-  ])('returns an explicit not-implemented result for $name', async ({ execute, name }) => {
-    const result = await execute();
-
-    expect(result.isSuccess).toBe(false);
-    if (!result.isSuccess) {
-      expect(result.error.code).toBe('authentication.use-case-not-implemented');
-      expect(result.error.context).toEqual({ useCase: name });
-    }
   });
 });

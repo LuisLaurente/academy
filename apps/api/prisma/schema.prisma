@@ -1,7 +1,6 @@
 generator client {
-  provider     = "prisma-client"
+  provider     = "prisma-client-js"
   output       = "../src/generated/prisma"
-  moduleFormat = "cjs"
 }
 
 datasource db {
@@ -283,3 +282,11 @@ model WorkflowResult {
   totalDurationMs    Int
   completedAt        DateTime
 }
+
+model SystemSetting {
+  key       String   @id
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+

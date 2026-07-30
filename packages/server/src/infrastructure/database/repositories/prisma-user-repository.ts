@@ -1,7 +1,5 @@
-import type {
-  AuthenticationAccountSnapshot,
-  AuthenticationRepository,
-} from '../../../modules/identity-access/authentication/application/ports/authentication-repositories.js';
+import type { AuthenticationRepository } from '../../../modules/identity-access/authentication/application/ports/authentication-repositories.js';
+import { type User } from '../../../modules/identity-access/authentication/domain/aggregates/authentication-aggregates.js';
 import type { UserId } from '../../../modules/identity-access/authentication/domain/identifiers/authentication-ids.js';
 import type { Email } from '../../../modules/identity-access/authentication/domain/value-objects/email.js';
 import type { DatabaseClient } from '../database-client.js';
@@ -14,7 +12,7 @@ export interface RawUserData {
 }
 
 export class PrismaUserRepository implements AuthenticationRepository {
-  private readonly memoryStore = new Map<string, AuthenticationAccountSnapshot>();
+  private readonly memoryStore = new Map<string, User>();
 
   constructor(private readonly dbClient?: DatabaseClient) {}
 
@@ -22,21 +20,21 @@ export class PrismaUserRepository implements AuthenticationRepository {
     return this.dbClient;
   }
 
-  async findByEmail(email: Email): Promise<AuthenticationAccountSnapshot | undefined> {
-    for (const snapshot of this.memoryStore.values()) {
-      if (snapshot.email.value.toLowerCase() === email.value.toLowerCase()) {
-        return snapshot;
+  async findByEmail(email: Email): Promise<User | undefined> {
+    for (const user of this.memoryStore.values()) {
+      if (user.email.value.toLowerCase() === email.value.toLowerCase()) {
+        return user;
       }
     }
     return undefined;
   }
 
-  async findById(userId: UserId): Promise<AuthenticationAccountSnapshot | undefined> {
+  async findById(userId: UserId): Promise<User | undefined> {
     return this.memoryStore.get(userId.value);
   }
 
-  async save(account: AuthenticationAccountSnapshot): Promise<void> {
-    this.memoryStore.set(account.userId.value, account);
+  async save(user: User): Promise<void> {
+    this.memoryStore.set(user.id.value, user);
   }
 
   async delete(userId: UserId): Promise<void> {

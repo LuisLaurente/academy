@@ -31,4 +31,7 @@ export class AuthResponseDto {
 
   @ApiProperty({ example: 'mock-jwt-token-string' })
   accessToken!: string;
+
+  @ApiProperty({ example: 'student' })
+  role!: string;
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { generateRecommendations, getActiveRecommendations } from './recommendation-service.js';
-import { completeWorkflow, executeWorkflowStep, startWorkflow } from './workflow-service.js';
+import { generateRecommendations, getActiveRecommendations } from './recommendation-service';
+import { completeWorkflow, executeWorkflowStep, startWorkflow } from './workflow-service';
 
 describe('Recommendation and Workflow Services', () => {
   it('generates and fetches active recommendations', async () => {

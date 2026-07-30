@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { getStudentEvaluations, submitEvaluation } from './evaluation-service.js';
-import { createExercise, getExerciseById } from './exercise-service.js';
-import { completeSessionItem, finishSession, startSession } from './session-service.js';
+import { getStudentEvaluations, submitEvaluation } from './evaluation-service';
+import { createExercise, getExerciseById } from './exercise-service';
+import { completeSessionItem, finishSession, startSession } from './session-service';
 
 describe('Session, Exercise, and Evaluation Services', () => {
   it('handles start, complete-item, and finish session', async () => {

@@ -1,9 +1,10 @@
-import { apiFetch, removeAuthToken, setAuthToken } from './api-client.js';
+import { apiFetch, removeAuthToken, setAuthToken } from './api-client';
 
 export interface AuthResponse {
   readonly accessToken: string;
   readonly email: string;
   readonly userId: string;
+  readonly role: string;
 }
 
 export interface AuthUser {

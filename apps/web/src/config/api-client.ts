@@ -1,4 +1,4 @@
-import { webEnvironment } from './environment.js';
+import { webEnvironment } from './environment';
 
 let currentAuthToken: string | null = null;
 

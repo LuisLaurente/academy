@@ -1,31 +1,25 @@
 import { Module, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
-import {
-  AdministrationModule,
-  AiContentModule,
-  AnalyticsModule,
-  ContentModule,
-  CurriculumModule,
-  EvaluationModule,
-  GamificationModule,
-  IdentityAccessModule,
-  MasteryModule,
-  NotificationsModule,
-  PracticeModule,
-  ReviewModule,
-  StudyActivityModule,
-  UserProfileModule,
-} from '@learning-os/server';
 import { validateApiEnvironment } from '@learning-os/configuration';
 
 import { CacheInfrastructureModule } from './infrastructure/cache/cache-infrastructure.module';
 import { DatabaseModule } from './infrastructure/database/database.module';
 import { QueueInfrastructureModule } from './infrastructure/queue/queue-infrastructure.module';
+import { AIOrchestrationModule } from './modules/ai-orchestration/ai-orchestration.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { ContentModule } from './modules/content/content.module';
+import { CurriculumModule } from './modules/curriculum/curriculum.module';
+import { EvaluationModule } from './modules/evaluation/evaluation.module';
+import { ExerciseModule } from './modules/exercises/exercise.module';
+import { LearningModule } from './modules/learning/learning.module';
+import { RecommendationModule } from './modules/recommendation/recommendation.module';
+import { SessionModule } from './modules/session/session.module';
+import { WorkflowModule } from './modules/workflow/workflow.module';
 import { AllExceptionsFilter } from './platform/errors/all-exceptions.filter';
+import { HealthModule } from './platform/health/health.module';
 import { CorrelationInterceptor } from './platform/observability/correlation.interceptor';
 import { RequestLoggingInterceptor } from './platform/observability/request-logging.interceptor';
-import { HealthModule } from './platform/health/health.module';
 
 const environment = process.env.NODE_ENV ?? 'development';
 
@@ -41,20 +35,16 @@ const environment = process.env.NODE_ENV ?? 'development';
     CacheInfrastructureModule,
     QueueInfrastructureModule,
     HealthModule,
-    IdentityAccessModule,
-    UserProfileModule,
+    AuthModule,
     CurriculumModule,
     ContentModule,
-    PracticeModule,
+    ExerciseModule,
     EvaluationModule,
-    MasteryModule,
-    ReviewModule,
-    AiContentModule,
-    StudyActivityModule,
-    AnalyticsModule,
-    GamificationModule,
-    NotificationsModule,
-    AdministrationModule,
+    LearningModule,
+    RecommendationModule,
+    SessionModule,
+    AIOrchestrationModule,
+    WorkflowModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

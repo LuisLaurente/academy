@@ -1,6 +1,8 @@
 export {
   AdministrationModule,
   AiContentModule,
+  AiOrchestrationModule,
+  ApplicationModule,
   AnalyticsModule,
   ContentModule,
   CurriculumModule,
@@ -11,7 +13,9 @@ export {
   MasteryModule,
   NotificationsModule,
   PracticeModule,
+  RecommendationModule,
   ReviewModule,
+  SessionModule,
   StudyActivityModule,
   UserProfileModule,
 } from './modules.js';

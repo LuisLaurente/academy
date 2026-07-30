@@ -7,3 +7,279 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// 1. Authentication
+model User {
+  id          String   @id
+  email       String   @unique
+  role        String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  credentials UserCredentials?
+  tokens      RefreshToken[]
+}
+
+model UserCredentials {
+  userId       String   @id
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model RefreshToken {
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  isRevoked Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// 2. Curriculum
+model CurriculumItem {
+  id            String   @id
+  title         String
+  description   String
+  difficulty    String
+  estimatedMins Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  prerequisites Prerequisite[] @relation("ItemPrerequisites")
+  requiredFor   Prerequisite[] @relation("RequiredFor")
+}
+
+model Prerequisite {
+  itemId         String
+  item           CurriculumItem @relation("ItemPrerequisites", fields: [itemId], references: [id], onDelete: Cascade)
+  prerequisiteId String
+  prerequisite   CurriculumItem @relation("RequiredFor", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, prerequisiteId])
+}
+
+// 3. Content
+model ContentBlock {
+  id           String       @id
+  title        String
+  contentType  String
+  body         String
+  version      String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  mediaAssets  MediaAsset[]
+}
+
+model MediaAsset {
+  id             String       @id
+  contentBlockId String
+  contentBlock   ContentBlock @relation(fields: [contentBlockId], references: [id], onDelete: Cascade)
+  url            String
+  assetType      String
+  caption        String?
+  createdAt      DateTime     @default(now())
+}
+
+// 4. Exercises
+model Exercise {
+  id           String             @id
+  title        String
+  prompt       String
+  exerciseType String
+  difficulty   String
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  templates    SolutionTemplate[]
+}
+
+model SolutionTemplate {
+  id         String   @id
+  exerciseId String
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  language   String
+  code       String
+  createdAt  DateTime @default(now())
+}
+
+// 5. Evaluation
+model EvaluationRecord {
+  id            String          @id
+  studentId     String
+  exerciseId    String
+  score         Float
+  isPassed      Boolean
+  feedback      String?
+  evaluatedAt   DateTime        @default(now())
+  rubricEntries GradingRubric[]
+}
+
+model GradingRubric {
+  id           String           @id
+  evaluationId String
+  evaluation   EvaluationRecord @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  criterion    String
+  maxPoints    Float
+  earnedPoints Float
+}
+
+// 6. Learning
+model StudentProfile {
+  id         String          @id
+  studentId  String          @unique
+  gradeLevel String
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  masteries  MasteryRecord[]
+  activities StudyActivity[]
+}
+
+model MasteryRecord {
+  id          String         @id
+  studentId   String
+  student     StudentProfile @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  topicId     String
+  score       Float
+  lastTested  DateTime
+  updatedAt   DateTime       @updatedAt
+}
+
+model StudyActivity {
+  id         String         @id
+  studentId  String
+  student    StudentProfile @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  activity   String
+  durationMs Int
+  occurredAt DateTime       @default(now())
+}
+
+// 7. Recommendation
+model RecommendationSet {
+  id          String            @id
+  studentId   String
+  confidence  Float
+  expiresAt   DateTime
+  createdAt   DateTime          @default(now())
+  items       RecommendedItem[]
+}
+
+model RecommendedItem {
+  id        String            @id
+  setId     String
+  set       RecommendationSet @relation(fields: [setId], references: [id], onDelete: Cascade)
+  itemId    String
+  rank      Int
+  weight    Float
+  priority  Float
+}
+
+// 8. Session
+model LearningSession {
+  id             String            @id
+  studentId      String
+  status         String
+  completedCount Int               @default(0)
+  skippedCount   Int               @default(0)
+  startedAt      DateTime          @default(now())
+  finishedAt     DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  items          SessionItem[]
+  statistics     SessionStatistics?
+}
+
+model SessionItem {
+  id         String          @id
+  sessionId  String
+  session    LearningSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  itemId     String
+  itemType   String
+  isCompleted Boolean        @default(false)
+  isSkipped   Boolean        @default(false)
+  orderIndex Int
+}
+
+model SessionStatistics {
+  sessionId      String          @id
+  session        LearningSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  durationMs     Int
+  completionRate Float
+}
+
+// 9. AI Orchestration
+model GenerationRequest {
+  id               String              @id
+  curriculumItemId String?
+  contentId        String?
+  requestType      String
+  status           String
+  priority         String
+  currentAttempts  Int                 @default(0)
+  maxAttempts      Int                 @default(3)
+  startedAt        DateTime?
+  finishedAt       DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  artifact         GenerationArtifact?
+  metadata         GenerationMetadata?
+}
+
+model GenerationArtifact {
+  id             String            @id
+  requestId      String            @unique
+  request        GenerationRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  artifactType   String
+  contentPayload String
+  createdAt      DateTime          @default(now())
+}
+
+model GenerationMetadata {
+  id            String            @id
+  requestId     String            @unique
+  request       GenerationRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  modelName     String
+  promptVersion String
+  tokensUsed    Int
+  costUSD       Float
+  durationMs    Int
+  createdAt     DateTime          @default(now())
+}
+
+// 10. Application Workflow
+model LearningWorkflow {
+  id               String                  @id
+  studentId        String
+  curriculumItemId String
+  sessionId        String?
+  currentStep      String
+  workflowStatus   String
+  startedAt        DateTime                @default(now())
+  completedAt      DateTime?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  stepExecutions   WorkflowStepExecution[]
+  result           WorkflowResult?
+}
+
+model WorkflowStepExecution {
+  id           String           @id
+  workflowId   String
+  workflow     LearningWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  stepName     String
+  status       String
+  errorMessage String?
+  startedAt    DateTime         @default(now())
+  completedAt  DateTime?
+  durationMs   Int?
+}
+
+model WorkflowResult {
+  id                 String           @id
+  workflowId         String           @unique
+  workflow           LearningWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  summary            String
+  executedStepsCount Int
+  totalDurationMs    Int
+  completedAt        DateTime
+}

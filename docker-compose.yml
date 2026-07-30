@@ -1,95 +1,72 @@
-name: learning-os
+version: '3.8'
 
 services:
-  web:
-    build:
-      context: .
-      dockerfile: docker/web.Dockerfile
+  postgres:
+    image: postgres:16-alpine
+    container_name: learning_os_postgres
+    restart: always
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3001
-      NODE_ENV: development
-    command: ['pnpm', 'turbo', 'run', 'dev', '--filter=@learning-os/web', '--env-mode=loose']
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: learning_os
     ports:
-      - '3000:3000'
-    depends_on:
-      api:
-        condition: service_healthy
+      - '5433:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD', 'wget', '--quiet', '--spider', 'http://127.0.0.1:3000/health']
-      interval: 10s
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
       timeout: 5s
-      retries: 10
-      start_period: 30s
-    networks:
-      - edge
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: learning_os_redis
+    restart: always
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   api:
     build:
       context: .
-      dockerfile: docker/api.Dockerfile
-    environment:
-      API_PORT: 3001
-      BULLMQ_PREFIX: learning-os
-      CORS_ORIGIN: http://localhost:3000
-      DATABASE_URL: postgresql://learning_os:learning_os_dev@postgres:5432/learning_os?schema=public
-      NODE_ENV: development
-      REDIS_URL: redis://redis:6379
-    command: ['pnpm', 'turbo', 'run', 'dev', '--filter=@learning-os/api', '--env-mode=loose']
+      dockerfile: apps/api/Dockerfile
+    container_name: learning_os_api
+    restart: always
     ports:
-      - '3001:3001'
+      - '3002:3001'
+    environment:
+      NODE_ENV: production
+      API_PORT: 3001
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/learning_os?schema=public
+      REDIS_URL: redis://redis:6379
+      CORS_ORIGIN: https://academy.k321.lat
+      AUTH_COOKIE_SECURE: 'true'
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    healthcheck:
-      test: ['CMD', 'wget', '--quiet', '--spider', 'http://127.0.0.1:3001/api/v1/health/ready']
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-    networks:
-      - edge
-      - data
 
-  postgres:
-    image: postgres:17-alpine
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: learning_os_web
+    restart: always
+    ports:
+      - '3000:3000'
     environment:
-      POSTGRES_DB: learning_os
-      POSTGRES_PASSWORD: learning_os_dev
-      POSTGRES_USER: learning_os
-    ports:
-      - '127.0.0.1:55432:5432'
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U learning_os -d learning_os']
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    networks:
-      - data
-
-  redis:
-    image: redis:7.4-alpine
-    command: ['redis-server', '--appendonly', 'yes']
-    ports:
-      - '127.0.0.1:56379:6379'
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 5s
-      timeout: 3s
-      retries: 10
-    networks:
-      - data
-
-networks:
-  edge:
-  data:
-    internal: true
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: https://academy.k321.lat
+      INTERNAL_API_URL: http://api:3001
+    depends_on:
+      - api
 
 volumes:
   postgres_data:
-  redis_data:

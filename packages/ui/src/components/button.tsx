@@ -12,6 +12,10 @@ const buttonVariants = cva(
         default: 'bg-primary text-primary-foreground hover:bg-primary/90',
         outline: 'border border-border bg-background hover:bg-muted',
         ghost: 'hover:bg-muted',
+        neobrutalism:
+          'bg-primary text-primary-foreground border-2 border-border shadow-neobrutalism hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[5px_5px_0px_0px_rgba(26,26,26,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(26,26,26,1)] dark:active:shadow-[2px_2px_0px_0px_rgba(253,251,247,1)] dark:hover:shadow-[5px_5px_0px_0px_rgba(253,251,247,1)] rounded-xl font-display font-semibold tracking-wide',
+        neobrutalismOutline:
+          'bg-background text-foreground border-2 border-border shadow-neobrutalism hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[5px_5px_0px_0px_rgba(26,26,26,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(26,26,26,1)] dark:active:shadow-[2px_2px_0px_0px_rgba(253,251,247,1)] dark:hover:shadow-[5px_5px_0px_0px_rgba(253,251,247,1)] rounded-xl font-display font-semibold tracking-wide',
       },
       size: {
         default: 'h-10 px-4 py-2',

@@ -65,7 +65,7 @@ export const apiEnvironmentSchema = z
 
 export const webEnvironmentSchema = z.object({
   NODE_ENV: nodeEnvironmentSchema.default('development'),
-  NEXT_PUBLIC_API_URL: urlSchema.default('http://localhost:3001'),
+  NEXT_PUBLIC_API_URL: urlSchema.default('http://localhost:3001/api/v1'),
 });
 
 export type ApiEnvironment = z.infer<typeof apiEnvironmentSchema>;

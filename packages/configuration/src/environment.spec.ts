@@ -60,6 +60,6 @@ describe('environment configuration', () => {
   it('provides a safe local default for the public API URL', () => {
     const environment = validateWebEnvironment({ NODE_ENV: 'development' });
 
-    expect(environment.NEXT_PUBLIC_API_URL).toBe('http://localhost:3001');
+    expect(environment.NEXT_PUBLIC_API_URL).toBe('http://localhost:3001/api/v1');
   });
 });

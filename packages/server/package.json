@@ -24,14 +24,6 @@
       "types": "./dist/modules/curriculum/index.d.ts",
       "default": "./dist/modules/curriculum/index.js"
     },
-    "./content": {
-      "types": "./dist/modules/content/index.d.ts",
-      "default": "./dist/modules/content/index.js"
-    },
-    "./ai-pipeline": {
-      "types": "./dist/modules/ai-pipeline/index.d.ts",
-      "default": "./dist/modules/ai-pipeline/index.js"
-    },
     "./exercises": {
       "types": "./dist/modules/exercises/index.d.ts",
       "default": "./dist/modules/exercises/index.js"

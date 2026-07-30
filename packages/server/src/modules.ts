@@ -44,3 +44,15 @@ export class AdministrationModule {}
 
 @Module({})
 export class LearningModule {}
+
+@Module({})
+export class RecommendationModule {}
+
+@Module({})
+export class SessionModule {}
+
+@Module({})
+export class AiOrchestrationModule {}
+
+@Module({})
+export class ApplicationModule {}

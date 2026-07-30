@@ -35,6 +35,26 @@
     "./learning": {
       "types": "./dist/modules/learning/index.d.ts",
       "default": "./dist/modules/learning/index.js"
+    },
+    "./recommendation": {
+      "types": "./dist/modules/recommendation/index.d.ts",
+      "default": "./dist/modules/recommendation/index.js"
+    },
+    "./session": {
+      "types": "./dist/modules/session/index.d.ts",
+      "default": "./dist/modules/session/index.js"
+    },
+    "./ai-orchestration": {
+      "types": "./dist/modules/ai-orchestration/index.d.ts",
+      "default": "./dist/modules/ai-orchestration/index.js"
+    },
+    "./application": {
+      "types": "./dist/modules/application/index.d.ts",
+      "default": "./dist/modules/application/index.js"
+    },
+    "./infrastructure": {
+      "types": "./dist/infrastructure/index.d.ts",
+      "default": "./dist/infrastructure/index.js"
     }
   },
   "scripts": {

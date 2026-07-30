@@ -1,4 +1,5 @@
-import { type CryptoUuidService } from '@learning-os/server/core';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { CryptoUuidService } from '@learning-os/server/core';
 import { BadRequestException, Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthResponseDto, type LoginUserDto, type RegisterUserDto } from './auth.dto';

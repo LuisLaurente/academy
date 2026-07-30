@@ -3,14 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { ContentController } from './content.controller';
 
 describe('ContentController', () => {
-  const controller = new ContentController(new PrismaContentRepository());
-
   it('creates and retrieves content block by id', async () => {
+    const repository = new PrismaContentRepository();
+    const controller = new ContentController(repository);
+
     const created = await controller.saveBlock({
       body: 'Test body content',
       contentType: 'markdown',
       id: 'cont-spec-1',
-      title: 'Test Title',
+      title: 'Introduction to DDD',
       version: 'v1.0',
     });
 

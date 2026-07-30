@@ -27,8 +27,11 @@ export default function CurriculumItemDetailsPage() {
         return { contentId: 'cont-ddd-intro', exerciseId: 'ex-ddd-quiz-1' };
       case 'curr-clean-arch':
         return { contentId: 'cont-clean-layers', exerciseId: 'ex-clean-arch-code-1' };
-      default:
-        return { contentId: 'cont-ddd-intro', exerciseId: 'ex-ddd-quiz-1' };
+      default: {
+        // Dynamic mapping for AI generated courses
+        const baseId = currId.replace(/^curr-/, '');
+        return { contentId: `cont-${baseId}`, exerciseId: `ex-${baseId}` };
+      }
     }
   };
 

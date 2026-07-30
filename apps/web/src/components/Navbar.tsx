@@ -2,18 +2,35 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, Compass, Award, User as UserIcon, Sun, Moon } from 'lucide-react';
+import { BookOpen, Compass, Award, User as UserIcon, Sun, Moon, Shield } from 'lucide-react';
 import { useTheme } from 'next-themes';
+
+import { useState } from 'react';
 
 export function Navbar() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const [role] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('learning_os_user');
+      if (stored) {
+        try {
+          const user = JSON.parse(stored);
+          return user.role || null;
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+    return null;
+  });
 
   const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: Compass },
     { label: 'Currículo', href: '/curriculum', icon: BookOpen },
     { label: 'Práctica', href: '/practice', icon: Award },
     { label: 'Perfil', href: '/profile', icon: UserIcon },
+    ...(role === 'admin' ? [{ label: 'Admin', href: '/admin', icon: Shield }] : []),
   ];
 
   return (

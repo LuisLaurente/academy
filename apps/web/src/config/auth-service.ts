@@ -4,6 +4,7 @@ export interface AuthResponse {
   readonly accessToken: string;
   readonly email: string;
   readonly userId: string;
+  readonly role: string;
 }
 
 export interface AuthUser {

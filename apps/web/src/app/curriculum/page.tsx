@@ -2,17 +2,30 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getCurriculumItems, type CurriculumItem } from '@/config/curriculum-service';
+import { useRouter } from 'next/navigation';
+import {
+  getCurriculumItems,
+  generateSyllabus,
+  type CurriculumItem,
+} from '@/config/curriculum-service';
 import { Background } from '@/components/Background';
 import { Navbar } from '@/components/Navbar';
 import { Card } from '@/components/Card';
 import { Button } from '@learning-os/ui/button';
-import { BookOpen, Clock, AlertCircle, ArrowRight } from 'lucide-react';
+import { BookOpen, Clock, AlertCircle, ArrowRight, Sparkles, HelpCircle } from 'lucide-react';
 
 export default function CurriculumPage() {
+  const router = useRouter();
   const [items, setItems] = useState<readonly CurriculumItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // AI Generation States
+  const [topicInput, setTopicInput] = useState('');
+  const [providerInput, setProviderInput] = useState('gemini');
+  const [generating, setGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [duplicates, setDuplicates] = useState<readonly CurriculumItem[] | null>(null);
 
   useEffect(() => {
     async function loadCurriculum() {
@@ -28,6 +41,31 @@ export default function CurriculumPage() {
     }
     void loadCurriculum();
   }, []);
+
+  const handleGenerate = async (force = false) => {
+    if (!topicInput.trim()) return;
+
+    setGenerating(true);
+    setGenerationError(null);
+    if (!force) setDuplicates(null);
+
+    try {
+      const res = await generateSyllabus(topicInput, providerInput, force);
+      if (res.status === 'duplicate_found' && res.duplicates) {
+        setDuplicates(res.duplicates);
+      } else if (res.status === 'success' && res.id) {
+        // Redirect to new details page
+        router.push(`/curriculum/${res.id}`);
+      } else {
+        setGenerationError(res.message || 'Ocurrió un error inesperado al generar.');
+      }
+    } catch (err) {
+      const errorVal = err as Error;
+      setGenerationError(errorVal.message || 'Error de red al conectar con el servidor.');
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   return (
     <div className="relative flex min-h-screen flex-col pt-24 pb-16">
@@ -49,6 +87,123 @@ export default function CurriculumPage() {
             temas recomendados por nuestro sistema.
           </p>
         </section>
+
+        {/* AI Syllabus Generator Box */}
+        <Card className="border-border bg-sage-pale/20 dark:bg-card shadow-neobrutalism-sm border-2 p-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Sparkles className="text-primary h-5 w-5 animate-pulse" />
+              <h2 className="font-display text-lg font-bold">Generar Nueva Ruta con IA</h2>
+            </div>
+
+            <p className="text-muted-foreground font-sans text-xs">
+              Ingresa un tema (ej: Python para Análisis de Datos, Fundamentos de Rust) y la IA
+              diseñará un temario completo, teoría y retos prácticos.
+            </p>
+
+            {generationError && (
+              <div className="border-primary bg-coral-red/5 text-primary flex items-center gap-2 rounded-lg border p-3 text-xs font-medium">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{generationError}</span>
+              </div>
+            )}
+
+            {duplicates && duplicates.length > 0 && (
+              <div className="border-primary bg-primary/5 flex flex-col gap-3 rounded-lg border-2 p-4">
+                <div className="flex items-center gap-2">
+                  <HelpCircle className="text-primary h-5 w-5 shrink-0" />
+                  <h4 className="font-display text-sm font-bold">
+                    ¿Deseas reutilizar un temario existente?
+                  </h4>
+                </div>
+                <p className="text-muted-foreground text-xs">
+                  Encontramos rutas de aprendizaje similares en el sistema:
+                </p>
+                <div className="space-y-2">
+                  {duplicates.map((dup) => (
+                    <div
+                      key={dup.id}
+                      className="bg-card border-border flex items-center justify-between rounded-lg border p-2.5"
+                    >
+                      <div>
+                        <h5 className="font-display text-xs font-bold">{dup.title}</h5>
+                        <p className="text-muted-foreground line-clamp-1 font-sans text-[10px]">
+                          {dup.description}
+                        </p>
+                      </div>
+                      <Button
+                        asChild
+                        variant="neobrutalism"
+                        className="h-7 cursor-pointer px-2 text-[10px]"
+                      >
+                        <Link href={`/curriculum/${dup.id}`}>Ver ruta</Link>
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button
+                    onClick={() => setDuplicates(null)}
+                    variant="neobrutalismOutline"
+                    className="h-8 cursor-pointer px-3 text-xs"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={() => handleGenerate(true)}
+                    variant="neobrutalism"
+                    className="h-8 cursor-pointer px-3 text-xs"
+                  >
+                    Generar Nuevo De Todas Formas
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {!duplicates && (
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="flex flex-1 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Escribe el tema que deseas aprender..."
+                    value={topicInput}
+                    onChange={(e) => setTopicInput(e.target.value)}
+                    disabled={generating}
+                    className="border-border bg-background shadow-neobrutalism-sm focus:ring-ring w-full rounded-lg border-2 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+                  />
+                  <select
+                    value={providerInput}
+                    onChange={(e) => setProviderInput(e.target.value)}
+                    disabled={generating}
+                    className="border-border bg-background shadow-neobrutalism-sm focus:ring-ring shrink-0 rounded-lg border-2 px-2 py-2 text-xs font-bold focus:outline-none"
+                  >
+                    <option value="gemini">Gemini</option>
+                    <option value="deepseek">DeepSeek</option>
+                    <option value="codex">Codex</option>
+                  </select>
+                </div>
+                <Button
+                  onClick={() => handleGenerate(false)}
+                  disabled={generating || !topicInput.trim()}
+                  variant="neobrutalism"
+                  className="flex shrink-0 cursor-pointer items-center justify-center gap-1.5 px-4 font-bold"
+                >
+                  {generating ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                      Generando...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" />
+                      Diseñar Ruta
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        </Card>
 
         {/* Content */}
         {loading ? (

@@ -19,10 +19,12 @@ export class AuthController {
     }
 
     const userId = this.uuidService.generate();
+    const role = dto.email.toLowerCase().includes('admin') ? 'admin' : 'student';
     return {
-      accessToken: `bearer-token-${userId}`,
+      accessToken: `bearer-token-${userId}-${role}`,
       email: dto.email,
       userId,
+      role,
     };
   }
 
@@ -36,10 +38,12 @@ export class AuthController {
     }
 
     const userId = this.uuidService.generate();
+    const role = dto.email.toLowerCase().includes('admin') ? 'admin' : 'student';
     return {
-      accessToken: `bearer-token-${userId}`,
+      accessToken: `bearer-token-${userId}-${role}`,
       email: dto.email,
       userId,
+      role,
     };
   }
 }

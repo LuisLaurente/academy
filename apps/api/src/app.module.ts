@@ -15,6 +15,7 @@ import { ExerciseModule } from './modules/exercises/exercise.module';
 import { LearningModule } from './modules/learning/learning.module';
 import { RecommendationModule } from './modules/recommendation/recommendation.module';
 import { SessionModule } from './modules/session/session.module';
+import { SettingsModule } from './modules/settings/settings.module';
 import { WorkflowModule } from './modules/workflow/workflow.module';
 import { AllExceptionsFilter } from './platform/errors/all-exceptions.filter';
 import { HealthModule } from './platform/health/health.module';
@@ -45,6 +46,7 @@ const environment = process.env.NODE_ENV ?? 'development';
     SessionModule,
     AIOrchestrationModule,
     WorkflowModule,
+    SettingsModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

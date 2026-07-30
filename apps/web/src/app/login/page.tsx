@@ -26,7 +26,7 @@ export default function LoginPage() {
       if (typeof window !== 'undefined') {
         localStorage.setItem(
           'learning_os_user',
-          JSON.stringify({ email: res.email, userId: res.userId }),
+          JSON.stringify({ email: res.email, userId: res.userId, role: res.role }),
         );
       }
       router.push('/dashboard');

@@ -3,6 +3,7 @@ import { CryptoUuidService } from '../../../core/identifiers/uuid-service.js';
 import { UserId } from '../../../modules/identity-access/authentication/domain/identifiers/authentication-ids.js';
 import { Email } from '../../../modules/identity-access/authentication/domain/value-objects/email.js';
 import { HashedPassword } from '../../../modules/identity-access/authentication/domain/value-objects/hashed-password.js';
+import { User } from '../../../modules/identity-access/authentication/domain/aggregates/authentication-aggregates.js';
 import { PrismaContentRepository } from './prisma-content-repository.js';
 import { PrismaCurriculumRepository } from './prisma-curriculum-repository.js';
 import { PrismaEvaluationRepository } from './prisma-evaluation-repository.js';
@@ -21,19 +22,23 @@ function unwrap<T>(result: {
 }
 
 describe('Prisma Repositories', () => {
-  it('PrismaUserRepository saves and retrieves AuthenticationAccountSnapshot by id and email', async () => {
+  it('PrismaUserRepository saves and retrieves User by id and email', async () => {
     const repo = new PrismaUserRepository();
     const userId = UserId.create(uuidService.generate());
     const email = unwrap(Email.create('student@academy.edu'));
     const passwordHash = unwrap(HashedPassword.create('hashed_pwd_123456'));
 
-    const snapshot = {
+    const user = User.register({
+      active: true,
+      createdAt: new Date(),
       email,
+      eventId: uuidService.generate(),
+      id: userId,
       passwordHash,
-      userId,
-    };
+      updatedAt: new Date(),
+    });
 
-    await repo.save(snapshot);
+    await repo.save(user);
 
     const foundById = await repo.findById(userId);
     expect(foundById).toBeDefined();
@@ -41,7 +46,7 @@ describe('Prisma Repositories', () => {
 
     const foundByEmail = await repo.findByEmail(email);
     expect(foundByEmail).toBeDefined();
-    expect(foundByEmail?.userId.equals(userId)).toBe(true);
+    expect(foundByEmail?.id.equals(userId)).toBe(true);
 
     await repo.delete(userId);
     expect(await repo.findById(userId)).toBeUndefined();

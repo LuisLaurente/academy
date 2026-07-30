@@ -1,4 +1,4 @@
-import { apiFetch } from './api-client.js';
+import { apiFetch } from './api-client';
 
 export interface SessionResponse {
   readonly completedCount: number;

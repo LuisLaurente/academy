@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { apiFetch, getAuthToken, removeAuthToken, setAuthToken } from './api-client.js';
-import { loginUser, logoutUser, registerUser } from './auth-service.js';
+import { apiFetch, getAuthToken, removeAuthToken, setAuthToken } from './api-client';
+import { loginUser, logoutUser, registerUser } from './auth-service';
 
 describe('api-client and auth-service', () => {
   it('manages auth token in storage', () => {

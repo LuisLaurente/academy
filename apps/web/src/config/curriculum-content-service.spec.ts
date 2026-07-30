@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { getContentBlockById, saveContentBlock } from './content-service.js';
-import { getCurriculumItemById, getCurriculumItems } from './curriculum-service.js';
+import { getContentBlockById, saveContentBlock } from './content-service';
+import { getCurriculumItemById, getCurriculumItems } from './curriculum-service';
 
 describe('Curriculum and Content Services', () => {
   it('fetches curriculum items list and single item', async () => {

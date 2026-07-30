@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getCurriculumItems, type CurriculumItem } from '@/config/curriculum-service';
 import { Background } from '@/components/Background';

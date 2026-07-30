@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BookOpen, Compass, Award, User as UserIcon, Sun, Moon } from 'lucide-react';

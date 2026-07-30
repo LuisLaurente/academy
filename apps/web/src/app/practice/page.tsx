@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getExerciseById, type Exercise } from '@/config/exercise-service';
 import { submitEvaluation } from '@/config/evaluation-service';
+import { startSession, completeSessionItem, finishSession } from '@/config/session-service';
 import { Background } from '@/components/Background';
 import { Navbar } from '@/components/Navbar';
 import { Card } from '@/components/Card';
@@ -15,6 +16,7 @@ function PracticeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const exerciseId = searchParams.get('exerciseId');
+  const curriculumId = searchParams.get('curriculumId');
   const [user] = useState<{ email: string; userId: string } | null>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('learning_os_user');
@@ -25,6 +27,7 @@ function PracticeContent() {
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   // Quiz interactive state
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -64,6 +67,20 @@ function PracticeContent() {
       router.push('/login');
     }
   }, [user, router]);
+
+  useEffect(() => {
+    if (!user || !curriculumId) return;
+
+    async function initSession() {
+      try {
+        const session = await startSession(user!.userId, [curriculumId!]);
+        setSessionId(session.id);
+      } catch (err) {
+        console.error('Failed to start study session:', err);
+      }
+    }
+    void initSession();
+  }, [user, curriculumId]);
 
   useEffect(() => {
     async function loadExercise() {
@@ -138,6 +155,15 @@ function PracticeContent() {
         feedback,
       });
 
+      if (isPassed && sessionId && curriculumId) {
+        try {
+          await completeSessionItem(sessionId, curriculumId);
+          await finishSession(sessionId);
+        } catch (sessErr) {
+          console.error('Failed to update session tracking:', sessErr);
+        }
+      }
+
       setResult({ score, isPassed, feedback });
     } catch (err) {
       console.error('Error submitting evaluation:', err);
@@ -168,6 +194,15 @@ function PracticeContent() {
         score,
         feedback,
       });
+
+      if (isPassed && sessionId && curriculumId) {
+        try {
+          await completeSessionItem(sessionId, curriculumId);
+          await finishSession(sessionId);
+        } catch (sessErr) {
+          console.error('Failed to update session tracking:', sessErr);
+        }
+      }
 
       setResult({ score, isPassed, feedback });
     } catch (err) {

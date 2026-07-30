@@ -1,7 +1,7 @@
-import React from 'react';
-import { cn } from '@learning-os/ui/lib/utils';
+import { type HTMLAttributes } from 'react';
+import { cn } from '@learning-os/ui/utils';
 
-export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   readonly hoverable?: boolean;
 }
 

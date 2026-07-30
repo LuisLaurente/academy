@@ -1,5 +1,3 @@
-import React from 'react';
-
 export function Background() {
   return (
     <div className="bg-background bg-grid-pattern absolute inset-0 -z-10 transition-colors duration-300">

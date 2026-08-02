@@ -13,7 +13,17 @@ import { Background } from '@/components/Background';
 import { Navbar } from '@/components/Navbar';
 import { Card } from '@/components/Card';
 import { Button } from '@learning-os/ui/button';
-import { BookOpen, Clock, AlertCircle, ArrowRight, Sparkles, HelpCircle } from 'lucide-react';
+import {
+  BookOpen,
+  Clock,
+  AlertCircle,
+  ArrowRight,
+  Sparkles,
+  HelpCircle,
+  Edit3,
+  Trash2,
+} from 'lucide-react';
+import { apiFetch } from '@/config/api-client';
 
 export default function CurriculumPage() {
   const router = useRouter();
@@ -31,6 +41,12 @@ export default function CurriculumPage() {
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<readonly CurriculumItem[] | null>(null);
 
+  // Administrative Actions States
+  const [renamingItem, setRenamingItem] = useState<CurriculumItem | null>(null);
+  const [newTitle, setNewTitle] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingTitle, setDeletingTitle] = useState('');
+
   const loadingMessages = [
     'Conectando con el orquestador de IA...',
     'Analizando la estructura pedagógica de tu tema...',
@@ -38,7 +54,7 @@ export default function CurriculumPage() {
     'Generando material teórico y lecturas clave...',
     'Creando evaluación formativa y retos interactivos...',
     'Estructurando base de datos de tu ruta personalizada...',
-    'Cargando detalles finales para tu viaje de estudio...'
+    'Cargando detalles finales para tu viaje de estudio...',
   ];
 
   const [messageIndex, setMessageIndex] = useState(0);
@@ -54,20 +70,20 @@ export default function CurriculumPage() {
     return () => clearInterval(interval);
   }, [generating]);
 
+  const loadCurriculum = async () => {
+    try {
+      const data = await getCurriculumItems();
+      setItems(data);
+    } catch (err) {
+      const errorVal = err as Error;
+      setError(errorVal.message || 'No se pudieron cargar los temas del currículo.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (authLoading) return;
-
-    async function loadCurriculum() {
-      try {
-        const data = await getCurriculumItems();
-        setItems(data);
-      } catch (err) {
-        const errorVal = err as Error;
-        setError(errorVal.message || 'No se pudieron cargar los temas del currículo.');
-      } finally {
-        setLoading(false);
-      }
-    }
     void loadCurriculum();
   }, [authLoading]);
 
@@ -83,7 +99,6 @@ export default function CurriculumPage() {
       if (res.status === 'duplicate_found' && res.duplicates) {
         setDuplicates(res.duplicates);
       } else if (res.status === 'success' && res.id) {
-        // Redirect to new details page
         router.push(`/curriculum/${res.id}`);
       } else {
         setGenerationError(res.message || 'Ocurrió un error inesperado al generar.');
@@ -93,6 +108,43 @@ export default function CurriculumPage() {
       setGenerationError(errorVal.message || 'Error de red al conectar con el servidor.');
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const submitRename = async () => {
+    if (!renamingItem || !newTitle.trim()) return;
+
+    try {
+      await apiFetch(`/curriculum/items/${renamingItem.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ title: newTitle }),
+      });
+
+      // Update local state immediately
+      setItems((prev) =>
+        prev.map((item) => (item.id === renamingItem.id ? { ...item, title: newTitle } : item)),
+      );
+      setRenamingItem(null);
+    } catch (err) {
+      const errorVal = err as Error;
+      alert(`Error al renombrar el curso: ${errorVal.message}`);
+    }
+  };
+
+  const submitDelete = async () => {
+    if (!deletingId) return;
+
+    try {
+      await apiFetch(`/curriculum/items/${deletingId}`, {
+        method: 'DELETE',
+      });
+
+      // Remove from local list immediately
+      setItems((prev) => prev.filter((item) => item.id !== deletingId));
+      setDeletingId(null);
+    } catch (err) {
+      const errorVal = err as Error;
+      alert(`Error al eliminar el curso: ${errorVal.message}`);
     }
   };
 
@@ -123,7 +175,9 @@ export default function CurriculumPage() {
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <Sparkles className="text-primary h-5 w-5 animate-pulse" />
-                <h2 className="font-display text-lg font-bold">Generar Nueva Ruta con IA (Admin)</h2>
+                <h2 className="font-display text-lg font-bold">
+                  Generar Nueva Ruta con IA (Admin)
+                </h2>
               </div>
 
               <p className="text-muted-foreground font-sans text-xs">
@@ -234,16 +288,16 @@ export default function CurriculumPage() {
                   </div>
 
                   {generating && (
-                    <div className="border-border bg-muted/10 mt-4 rounded-xl border-2 p-6 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="border-border bg-muted/10 animate-in fade-in slide-in-from-bottom-2 mt-4 space-y-4 rounded-xl border-2 p-6 duration-300">
                       <div className="flex items-center gap-3">
-                        <div className="bg-primary/10 border-primary text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 animate-bounce">
+                        <div className="bg-primary/10 border-primary text-primary flex h-10 w-10 shrink-0 animate-bounce items-center justify-center rounded-full border-2">
                           <Sparkles className="h-5 w-5 animate-pulse" />
                         </div>
-                        <div className="space-y-1 w-full">
-                          <h3 className="font-display text-sm font-bold text-foreground">
+                        <div className="w-full space-y-1">
+                          <h3 className="font-display text-foreground text-sm font-bold">
                             Generando tu Ruta de Aprendizaje Personalizada
                           </h3>
-                          <p className="text-primary text-xs font-semibold animate-pulse transition-all duration-300">
+                          <p className="text-primary animate-pulse text-xs font-semibold transition-all duration-300">
                             {loadingMessages[messageIndex]}
                           </p>
                         </div>
@@ -252,27 +306,27 @@ export default function CurriculumPage() {
                       {/* Animated progress bar */}
                       <div className="space-y-1.5">
                         <div className="border-border/20 bg-muted h-3 w-full overflow-hidden rounded-full border">
-                          <div className="bg-primary h-full rounded-full animate-progress-glow" />
+                          <div className="bg-primary animate-progress-glow h-full rounded-full" />
                         </div>
-                        <div className="flex justify-between items-center text-[10px] text-muted-foreground font-semibold">
+                        <div className="text-muted-foreground flex items-center justify-between text-[10px] font-semibold">
                           <span>Preparando material pedagógico...</span>
                           <span>Esto puede tomar unos 10-15 segundos</span>
                         </div>
                       </div>
 
                       {/* Skeleton roadmap preview */}
-                      <div className="border-border/10 border-t pt-4 space-y-3 opacity-60 pointer-events-none select-none">
+                      <div className="border-border/10 pointer-events-none space-y-3 border-t pt-4 opacity-60 select-none">
                         <div className="flex items-center gap-2">
-                          <div className="bg-muted h-4 w-12 rounded animate-pulse" />
-                          <div className="bg-muted h-3 w-32 rounded animate-pulse" />
+                          <div className="bg-muted h-4 w-12 animate-pulse rounded" />
+                          <div className="bg-muted h-3 w-32 animate-pulse rounded" />
                         </div>
                         <div className="flex items-center gap-2 pl-4">
                           <div className="bg-muted h-2 w-2 rounded-full" />
-                          <div className="bg-muted h-2.5 w-24 rounded animate-pulse" />
+                          <div className="bg-muted h-2.5 w-24 animate-pulse rounded" />
                         </div>
                         <div className="flex items-center gap-2 pl-4">
                           <div className="bg-muted h-2 w-2 rounded-full" />
-                          <div className="bg-muted h-2.5 w-28 rounded animate-pulse" />
+                          <div className="bg-muted h-2.5 w-28 animate-pulse rounded" />
                         </div>
                       </div>
                     </div>
@@ -284,11 +338,15 @@ export default function CurriculumPage() {
         ) : (
           <Card className="border-border bg-muted/20 shadow-neobrutalism-sm border-2 p-6">
             <div className="flex items-center gap-3">
-              <Sparkles className="text-muted-foreground h-5 w-5 opacity-40 shrink-0" />
+              <Sparkles className="text-muted-foreground h-5 w-5 shrink-0 opacity-40" />
               <div className="space-y-0.5">
-                <h3 className="font-display text-sm font-bold">Generación con IA reservada para Administradores</h3>
+                <h3 className="font-display text-sm font-bold">
+                  Generación con IA reservada para Administradores
+                </h3>
                 <p className="text-muted-foreground font-sans text-xs">
-                  Para optimizar recursos y cuotas de servicio, solo las cuentas de tipo Administrador pueden diseñar nuevas rutas curriculares con IA. Si necesitas una ruta que no esté en el catálogo de abajo, por favor solicítala a tu profesor.
+                  Para optimizar recursos y cuotas de servicio, solo las cuentas de tipo
+                  Administrador pueden diseñar nuevas rutas curriculares con IA. Si necesitas una
+                  ruta que no esté en el catálogo de abajo, por favor solicítala a tu profesor.
                 </p>
               </div>
             </div>
@@ -366,17 +424,47 @@ export default function CurriculumPage() {
                       </span>
                     </div>
 
-                    <Button
-                      asChild
-                      variant="neobrutalism"
-                      size="sm"
-                      className="h-8 cursor-pointer text-xs"
-                    >
-                      <Link href={`/curriculum/${item.id}`} className="flex items-center gap-1">
-                        Estudiar
-                        <ArrowRight className="h-3 w-3" />
-                      </Link>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {isAdmin && (
+                        <>
+                          <Button
+                            onClick={() => {
+                              setRenamingItem(item);
+                              setNewTitle(item.title);
+                            }}
+                            variant="neobrutalismOutline"
+                            size="sm"
+                            className="h-8 w-8 cursor-pointer p-0"
+                            title="Renombrar curso"
+                          >
+                            <Edit3 className="text-foreground h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setDeletingId(item.id);
+                              setDeletingTitle(item.title);
+                            }}
+                            variant="neobrutalismOutline"
+                            size="sm"
+                            className="h-8 w-8 cursor-pointer border-red-500/30 p-0 hover:bg-red-50 dark:hover:bg-red-950/20"
+                            title="Eliminar curso"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                          </Button>
+                        </>
+                      )}
+                      <Button
+                        asChild
+                        variant="neobrutalism"
+                        size="sm"
+                        className="h-8 cursor-pointer text-xs font-bold"
+                      >
+                        <Link href={`/curriculum/${item.id}`} className="flex items-center gap-1">
+                          Estudiar
+                          <ArrowRight className="h-3 w-3" />
+                        </Link>
+                      </Button>
+                    </div>
                   </div>
                 </Card>
               );
@@ -384,6 +472,83 @@ export default function CurriculumPage() {
           </div>
         )}
       </main>
+
+      {/* Rename Modal Dialog */}
+      {renamingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md">
+            <Card className="border-border bg-card shadow-neobrutalism space-y-4 border-2 p-6">
+              <h3 className="font-display text-lg font-bold">Renombrar Curso</h3>
+              <p className="text-muted-foreground font-sans text-xs">
+                Ingresa el nuevo título para tu curso:
+              </p>
+              <input
+                type="text"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="Nuevo título del curso"
+                className="border-border bg-background shadow-neobrutalism-sm focus:ring-ring text-foreground w-full rounded-lg border-2 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+              />
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  onClick={() => setRenamingItem(null)}
+                  variant="neobrutalismOutline"
+                  className="h-9 cursor-pointer text-xs font-semibold"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={submitRename}
+                  disabled={!newTitle.trim() || newTitle.trim() === renamingItem.title}
+                  variant="neobrutalism"
+                  className="h-9 cursor-pointer border-2 bg-yellow-500 text-xs font-bold text-black hover:bg-yellow-600"
+                >
+                  Guardar
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal Dialog */}
+      {deletingId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md">
+            <Card className="border-border bg-card shadow-neobrutalism space-y-4 border-2 p-6">
+              <div className="flex items-center gap-2 text-red-500">
+                <AlertCircle className="h-5 w-5 shrink-0" />
+                <h3 className="font-display text-lg font-bold">¿Eliminar Curso?</h3>
+              </div>
+              <p className="text-muted-foreground font-sans text-sm">
+                ¿Estás seguro de que deseas eliminar permanentemente el curso{' '}
+                <strong>&quot;{deletingTitle}&quot;</strong>?
+              </p>
+              <p className="rounded-lg border border-red-500/20 bg-red-500/5 p-3 font-sans text-[11px] leading-relaxed text-red-500">
+                <strong>Atención:</strong> Esta acción borrará todas las lecciones escritas,
+                historial de prácticas completadas de estudiantes y configuraciones de spaced
+                repetition de forma irreversible.
+              </p>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  onClick={() => setDeletingId(null)}
+                  variant="neobrutalismOutline"
+                  className="h-9 cursor-pointer text-xs font-semibold"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={submitDelete}
+                  variant="neobrutalism"
+                  className="h-9 cursor-pointer border-2 bg-red-500 text-xs font-bold text-white hover:bg-red-600"
+                >
+                  Eliminar Curso
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

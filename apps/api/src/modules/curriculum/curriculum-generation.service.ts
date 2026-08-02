@@ -1,5 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import type { GenerateSyllabusResponseDto } from './curriculum.dto';
 
@@ -18,12 +17,31 @@ export class CurriculumGenerationService {
     });
   }
 
+  async getItemWithDetails(id: string) {
+    const item = await this.prisma.curriculumItem.findUnique({
+      where: { id },
+      include: {
+        levels: {
+          orderBy: { orderIndex: 'asc' },
+          include: {
+            sublevels: {
+              orderBy: { orderIndex: 'asc' },
+              include: {
+                contentBlock: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    return item;
+  }
+
   async generate(
     topic: string,
     provider = 'gemini',
     forceNew = false,
   ): Promise<GenerateSyllabusResponseDto> {
-    // 1. Search for duplicates if not forced
     if (!forceNew) {
       const duplicates = await this.searchSimilar(topic);
       if (duplicates.length > 0) {
@@ -40,7 +58,6 @@ export class CurriculumGenerationService {
       }
     }
 
-    // 2. Fetch API key from SystemSetting
     const keySetting = await this.prisma.systemSetting.findUnique({
       where: { key: `${provider}_api_key` },
     });
@@ -53,7 +70,6 @@ export class CurriculumGenerationService {
       );
     }
 
-    // Prompt 1: Generate Roadmap only
     const prompt1 = `Genera un mapa de ruta educativo (roadmap) en español para el tema: "${topic}".
 Debes devolver ÚNICAMENTE un objeto JSON válido que cumpla con la siguiente estructura exacta. NO incluyas bloques de código markdown (\`\`\`json), marcas, textos de introducción ni de conclusión. Devuelve solo el objeto JSON crudo listo para ser parseado:
 {
@@ -61,55 +77,23 @@ Debes devolver ÚNICAMENTE un objeto JSON válido que cumpla con la siguiente es
     "title": "Título del tema",
     "description": "Una descripción breve del curso en una o dos líneas",
     "difficulty": "beginner",
-    "estimatedMins": 45
+    "estimatedMins": 120
   },
   "roadmap": [
     {
-      "level": "Básico",
+      "level": "Nombre del Nivel/Módulo (ej. Conceptos Básicos, Sintaxis de Control, etc.)",
       "sublevels": [
-        { "title": "1. Primer subtema básico", "description": "Breve descripción" },
-        { "title": "2. Segundo subtema básico", "description": "Breve descripción" },
-        { "title": "3. Tercer subtema básico", "description": "Breve descripción" },
-        { "title": "4. Cuarto subtema básico", "description": "Breve descripción" },
-        { "title": "5. Quinto subtema básico", "description": "Breve descripción" }
-      ]
-    },
-    {
-      "level": "Intermedio",
-      "sublevels": [
-        { "title": "1. Primer subtema intermedio", "description": "Breve descripción" },
-        { "title": "2. Segundo subtema intermedio", "description": "Breve descripción" },
-        { "title": "3. Tercer subtema intermedio", "description": "Breve descripción" },
-        { "title": "4. Cuarto subtema intermedio", "description": "Breve descripción" },
-        { "title": "5. Quinto subtema intermedio", "description": "Breve descripción" }
-      ]
-    },
-    {
-      "level": "Avanzado",
-      "sublevels": [
-        { "title": "1. Primer subtema avanzado", "description": "Breve descripción" },
-        { "title": "2. Segundo subtema avanzado", "description": "Breve descripción" },
-        { "title": "3. Tercer subtema avanzado", "description": "Breve descripción" },
-        { "title": "4. Cuarto subtema avanzado", "description": "Breve descripción" },
-        { "title": "5. Quinto subtema avanzado", "description": "Breve descripción" }
-      ]
-    },
-    {
-      "level": "Profesional",
-      "sublevels": [
-        { "title": "1. Primer subtema profesional", "description": "Breve descripción" },
-        { "title": "2. Segundo subtema profesional", "description": "Breve descripción" },
-        { "title": "3. Tercer subtema profesional", "description": "Breve descripción" },
-        { "title": "4. Cuarto subtema profesional", "description": "Breve descripción" },
-        { "title": "5. Quinto subtema profesional", "description": "Breve descripción" }
+        { "title": "Nombre del subtema 1", "description": "Breve descripción de lo que se aprenderá" },
+        { "title": "Nombre del subtema 2", "description": "Breve descripción de lo que se aprenderá" }
       ]
     }
   ]
 }
 
 REGLAS DE GENERACIÓN CRÍTICAS:
-1. El temario DEBE estar sumamente desmenuzado. Genera EXACTAMENTE 5 subtemas independientes para cada uno de los 4 niveles (Básico, Intermedio, Avanzado, Profesional), sumando un total de exactamente 20 subtemas en la ruta.
-2. Devuelve únicamente el objeto JSON. Sin formato Markdown, sin texto introductorio.`;
+1. El temario DEBE estar sumamente desmenuzado y estructurado de forma lógica para permitir un aprendizaje secuencial profundo.
+2. No hay limitaciones en la cantidad de niveles ni en la cantidad de subniveles por nivel. Genera tantos como sean necesarios para desmenuzar bien el tema, pero procura que el contenido de cada subnivel sea específico y focalizado.
+3. Devuelve únicamente el objeto JSON. Sin formato Markdown, sin texto introductorio.`;
 
     try {
       const response = await fetch(
@@ -149,7 +133,6 @@ REGLAS DE GENERACIÓN CRÍTICAS:
 
       const data = JSON.parse(text);
 
-      // Create unique slug
       const slug =
         topic
           .toLowerCase()
@@ -157,30 +140,8 @@ REGLAS DE GENERACIÓN CRÍTICAS:
           .replace(/(^-|-$)+/g, '') || 'topic';
       const timestamp = Date.now();
       const uniqueId = `${slug}-${timestamp}`;
-
       const generatedId = `curr-${uniqueId}`;
-      const contentId = `cont-${uniqueId}`;
-      const requestId = `req-${uniqueId}`;
 
-      // Format initial empty roadmap comment with subtopicId
-      let subIndex = 1;
-      const initialRoadmap = data.roadmap.map((lvl: any) => ({
-        level: lvl.level,
-        sublevels: lvl.sublevels.map((sub: any) => {
-          const subId = `sub-${uniqueId}-${subIndex++}`;
-          sub.subtopicId = subId;
-          return {
-            subtopicId: subId,
-            title: sub.title,
-            description: sub.description,
-            exerciseIds: [],
-          };
-        }),
-      }));
-
-      const initialBody = `<!-- ROADMAP_START -->${JSON.stringify(initialRoadmap)}<!-- ROADMAP_END -->\n\n# ${data.curriculumItem.title}\n\nGenerando lecciones en segundo plano...`;
-
-      // 4. Save to Database in a transaction
       await this.prisma.$transaction(async (tx) => {
         await tx.curriculumItem.create({
           data: {
@@ -188,42 +149,38 @@ REGLAS DE GENERACIÓN CRÍTICAS:
             title: data.curriculumItem.title,
             description: data.curriculumItem.description,
             difficulty: data.curriculumItem.difficulty || 'beginner',
-            estimatedMins: data.curriculumItem.estimatedMins || 45,
+            estimatedMins: data.curriculumItem.estimatedMins || 120,
           },
         });
 
-        await tx.contentBlock.create({
-          data: {
-            id: contentId,
-            title: 'Teoría de ' + data.curriculumItem.title,
-            contentType: 'text/markdown',
-            body: initialBody,
-            version: '1.0.0',
-          },
-        });
+        for (let lIdx = 0; lIdx < data.roadmap.length; lIdx++) {
+          const lvl = data.roadmap[lIdx];
+          const levelId = `lvl-${uniqueId}-${lIdx}`;
+          await tx.curriculumLevel.create({
+            data: {
+              id: levelId,
+              curriculumItemId: generatedId,
+              title: lvl.level,
+              orderIndex: lIdx,
+              status: 'not_generated',
+            },
+          });
 
-        await tx.generationRequest.create({
-          data: {
-            id: requestId,
-            curriculumItemId: generatedId,
-            contentId: contentId,
-            requestType: 'syllabus_generation',
-            status: 'generating_sublevels',
-            priority: 'high',
-          },
-        });
+          for (let sIdx = 0; sIdx < lvl.sublevels.length; sIdx++) {
+            const sub = lvl.sublevels[sIdx];
+            const sublevelId = `sub-${uniqueId}-${lIdx}-${sIdx}`;
+            await tx.curriculumSublevel.create({
+              data: {
+                id: sublevelId,
+                levelId: levelId,
+                title: sub.title,
+                description: sub.description,
+                orderIndex: sIdx,
+              },
+            });
+          }
+        }
       });
-
-      // 5. Kick off background generator for sublevels (unblocking the HTTP response)
-      void this.generateSublevelsBackground(
-        generatedId,
-        contentId,
-        requestId,
-        data.roadmap,
-        apiKey,
-        uniqueId,
-        data.curriculumItem.title,
-      );
 
       return {
         id: generatedId,
@@ -238,96 +195,269 @@ REGLAS DE GENERACIÓN CRÍTICAS:
     }
   }
 
-  async getGenerationStatus(id: string) {
-    const request = await this.prisma.generationRequest.findFirst({
-      where: { curriculumItemId: id },
-      include: { artifact: true },
+  async generateLevel(courseId: string, levelId: string) {
+    const level = await this.prisma.curriculumLevel.findUnique({
+      where: { id: levelId },
+      include: { sublevels: true },
     });
 
-    if (!request) {
-      return { status: 'completed', completed: 100, total: 100, percent: 100 };
+    if (!level) {
+      throw new NotFoundException('Módulo/Nivel no encontrado.');
     }
 
-    if (request.status === 'completed') {
-      return { status: 'completed', completed: 100, total: 100, percent: 100 };
+    if (level.status === 'completed') {
+      return { status: 'completed', message: 'El módulo ya está completamente generado.' };
     }
 
-    // Mark as failed if generation was interrupted/stopped
-    if (request.status === 'generating_sublevels' || request.status === 'failed') {
-      await this.prisma.generationRequest.update({
-        where: { id: request.id },
-        data: { status: 'failed' },
-      });
-      request.status = 'failed';
-    }
+    // 1. Lock acquisition with orphan detection (timeout after 90 seconds)
+    const now = new Date();
+    const lockTimeout = new Date(now.getTime() - 90000);
 
-    if (request.artifact) {
-      try {
-        const progress = JSON.parse(request.artifact.contentPayload);
-        const percent = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
-        return {
-          status: request.status,
-          completed: progress.completed,
-          total: progress.total,
-          percent: percent,
-          sublevels: progress.sublevels,
-        };
-      } catch (e) {
-        console.error('Failed to parse progress status payload:', e);
-      }
-    }
-
-    return {
-      status: request.status,
-      completed: 0,
-      total: 20,
-      percent: 0,
-    };
-  }
-
-  async resume(id: string) {
-    const request = await this.prisma.generationRequest.findFirst({
-      where: { curriculumItemId: id },
-      include: { artifact: true },
-    });
-
-    if (!request) {
-      throw new BadRequestException('No se encontró ninguna solicitud de generación para este tema.');
-    }
-
-    if (request.status === 'completed') {
-      return { status: 'completed', message: 'La generación ya se completó con éxito.' };
-    }
-
-    // Set request status back to generating_sublevels
-    await this.prisma.generationRequest.update({
-      where: { id: request.id },
+    const affected = await this.prisma.curriculumLevel.updateMany({
+      where: {
+        id: levelId,
+        OR: [{ status: { not: 'generating' } }, { prefetchingStartedAt: { lt: lockTimeout } }],
+      },
       data: {
-        status: 'generating_sublevels',
-        updatedAt: new Date(),
+        status: 'generating',
+        prefetchingStartedAt: now,
       },
     });
 
-    // Reset failed/processing status keys to pending in progress payload
-    if (request.artifact) {
-      try {
-        const progress = JSON.parse(request.artifact.contentPayload);
-        progress.status = 'generating';
-        Object.keys(progress.sublevels || {}).forEach((k) => {
-          if (progress.sublevels[k] !== 'completed') {
-            progress.sublevels[k] = 'pending';
-          }
-        });
-        await this.prisma.generationArtifact.update({
-          where: { requestId: request.id },
-          data: { contentPayload: JSON.stringify(progress) },
-        });
-      } catch (e) {
-        console.error('Failed to update progress status on resume:', e);
-      }
+    if (affected.count === 0) {
+      return { status: 'generating', message: 'El módulo ya se está generando en segundo plano.' };
     }
 
-    // Fetch API key
+    const keySetting = await this.prisma.systemSetting.findUnique({
+      where: { key: 'gemini_api_key' },
+    });
+    const apiKey = keySetting?.value || process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      // Revert status
+      await this.prisma.curriculumLevel.update({
+        where: { id: levelId },
+        data: { status: 'failed' },
+      });
+      throw new BadRequestException('Clave API de Gemini no configurada.');
+    }
+
+    const course = await this.prisma.curriculumItem.findUnique({ where: { id: courseId } });
+    const courseTitle = course?.title || 'Tema';
+
+    // 2. Spawn background task
+    void this.generateLevelBackground(courseId, levelId, level.sublevels, apiKey, courseTitle);
+
+    return {
+      status: 'generating',
+      message: 'Iniciando la generación del módulo en segundo plano.',
+    };
+  }
+
+  private async generateLevelBackground(
+    _courseId: string,
+    levelId: string,
+    sublevels: any[],
+    apiKey: string,
+    courseTitle: string,
+  ): Promise<void> {
+    try {
+      for (const sub of sublevels) {
+        let retries = 3;
+        let success = false;
+
+        const promptTheoryELI5 = `Estás redactando la lección teórica detallada para el subtema: "${sub.title}" del curso "${courseTitle}".
+
+Usa un enfoque pedagógico ELI5 (Explícamelo como si tuviera 5 años). Sigue estrictamente estas pautas:
+1. Tono y Redacción: Usa un tono muy cálido, entusiasta y sumamente claro. Evita lenguaje técnico árido sin antes definirlo con una analogía sencilla.
+2. Analogías: Cada concepto clave debe tener una analogía con la vida real (ej: cajas con etiquetas para variables, recetas de cocina para algoritmos, etc.).
+3. Estructura de Secciones: Divide la lección en las siguientes secciones numeradas del 1 al 6:
+   ## 1. La Idea en Simple (¿Qué es?)
+   [Explicación con una analogía divertida y directa]
+   
+   ## 2. ¿Para qué nos sirve en el mundo real?
+   [Ejemplos prácticos y cotidianos de su utilidad]
+   
+   ## 3. ¿Cómo funciona paso a paso?
+   [El proceso lógico explicado de forma visual y secuencial]
+   
+   ## 4. Los Bloques de Construcción (Conceptos clave)
+   [Glosario de 3 o 4 términos explicados sencillamente]
+   
+   ## 5. Miremos un Código Súper Simple
+   [Ejemplo de código muy corto y fácil, comentado línea por línea explicando el "por qué"]
+   
+   ## 6. Errores Comunes y Superpoderes (Buenas prácticas)
+   [Menciona 2 errores que cometen los principiantes como si fueran tropiezos graciosos, y 2 buenas prácticas como superpoderes]
+
+Devuelve únicamente el contenido formateado en Markdown, sin rodeos, listo para ser guardado.`;
+
+        while (retries > 0 && !success) {
+          try {
+            const response = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_MODEL ?? 'gemini-2.0-flash'}:generateContent?key=${apiKey}`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: promptTheoryELI5 }] }],
+                }),
+              },
+            );
+
+            if (!response.ok) {
+              const errText = await response.text();
+              if (response.status === 429) {
+                // Pause for 60 seconds on rate limit
+                await new Promise((r) => setTimeout(r, 60000));
+                throw new Error(`Excedido límite de cuota (429).`);
+              }
+              throw new Error(`Error de Gemini API: ${response.status} - ${errText}`);
+            }
+
+            const resData = (await response.json()) as any;
+            const text = resData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            if (!text) throw new Error('Respuesta de IA vacía.');
+
+            const contentBlockId = `cont-sub-${sub.id}`;
+
+            // Create/overwrite ContentBlock for this subtopic
+            await this.prisma.contentBlock.upsert({
+              where: { id: contentBlockId },
+              update: {
+                title: 'Teoría de ' + sub.title,
+                body: text,
+                updatedAt: new Date(),
+              },
+              create: {
+                id: contentBlockId,
+                title: 'Teoría de ' + sub.title,
+                contentType: 'text/markdown',
+                body: text,
+                version: '1.0.0',
+              },
+            });
+
+            // Link sublevel to ContentBlock
+            await this.prisma.curriculumSublevel.update({
+              where: { id: sub.id },
+              data: { contentBlockId },
+            });
+
+            success = true;
+          } catch (e) {
+            console.error(
+              `Failed to generate sublevel theory "${sub.title}", retries left: ${retries - 1}`,
+              e,
+            );
+            retries--;
+            if (retries > 0) {
+              await new Promise((r) => setTimeout(r, 4000));
+            }
+          }
+        }
+
+        if (!success) {
+          throw new Error(
+            `No se pudo generar la teoría para el subtema "${sub.title}" tras varios intentos.`,
+          );
+        }
+
+        // Wait 4s between sublevel generations to respect rate limits
+        await new Promise((r) => setTimeout(r, 4000));
+      }
+
+      // Mark level as completed
+      await this.prisma.curriculumLevel.update({
+        where: { id: levelId },
+        data: { status: 'completed' },
+      });
+    } catch (err) {
+      console.error('Fatal error during background level theory generation:', err);
+      await this.prisma.curriculumLevel.update({
+        where: { id: levelId },
+        data: { status: 'failed' },
+      });
+    }
+  }
+
+  // Returns overall progress for course items, mapping to old frontend polling logic for compatibility
+  async getGenerationStatus(id: string) {
+    const item = await this.prisma.curriculumItem.findUnique({
+      where: { id },
+      include: {
+        levels: {
+          include: { sublevels: true },
+        },
+      },
+    });
+
+    if (!item) {
+      return { status: 'completed', completed: 100, total: 100, percent: 100 };
+    }
+
+    let totalSublevels = 0;
+    let completedSublevels = 0;
+    let anyGenerating = false;
+    const sublevelsProgress: Record<string, string> = {};
+
+    item.levels.forEach((lvl) => {
+      lvl.sublevels.forEach((sub) => {
+        totalSublevels++;
+        const key = `${lvl.title}_${sub.title}`;
+
+        if (sub.contentBlockId) {
+          completedSublevels++;
+          sublevelsProgress[key] = 'completed';
+        } else if (lvl.status === 'generating') {
+          anyGenerating = true;
+          sublevelsProgress[key] = 'processing';
+        } else if (lvl.status === 'failed') {
+          sublevelsProgress[key] = 'failed';
+        } else {
+          sublevelsProgress[key] = 'pending';
+        }
+      });
+    });
+
+    const percent =
+      totalSublevels > 0 ? Math.round((completedSublevels / totalSublevels) * 100) : 100;
+    const status = anyGenerating
+      ? 'generating_sublevels'
+      : percent === 100
+        ? 'completed'
+        : 'failed';
+
+    return {
+      status,
+      completed: completedSublevels,
+      total: totalSublevels,
+      percent,
+      sublevels: sublevelsProgress,
+    };
+  }
+
+  // Compatibility resume endpoint: resumes failed levels in the curriculum item
+  async resume(id: string) {
+    const item = await this.prisma.curriculumItem.findUnique({
+      where: { id },
+      include: { levels: true },
+    });
+
+    if (!item) {
+      throw new NotFoundException('Curso no encontrado.');
+    }
+
+    const failedLevels = item.levels.filter(
+      (lvl) => lvl.status === 'failed' || lvl.status === 'not_generated',
+    );
+    if (failedLevels.length === 0) {
+      return {
+        status: 'completed',
+        message: 'No hay módulos fallidos o pendientes de generación.',
+      };
+    }
+
     const keySetting = await this.prisma.systemSetting.findUnique({
       where: { key: 'gemini_api_key' },
     });
@@ -337,359 +467,88 @@ REGLAS DE GENERACIÓN CRÍTICAS:
       throw new BadRequestException('Clave API no disponible.');
     }
 
-    const contentBlock = await this.prisma.contentBlock.findUnique({
-      where: { id: request.contentId || '' },
-    });
-
-    if (!contentBlock) {
-      throw new BadRequestException('No se encontró el bloque de contenido.');
+    for (const lvl of failedLevels) {
+      await this.prisma.curriculumLevel.update({
+        where: { id: lvl.id },
+        data: { status: 'generating', prefetchingStartedAt: new Date() },
+      });
+      const fullLvl = await this.prisma.curriculumLevel.findUnique({
+        where: { id: lvl.id },
+        include: { sublevels: true },
+      });
+      if (fullLvl) {
+        void this.generateLevelBackground(id, lvl.id, fullLvl.sublevels, apiKey, item.title);
+      }
     }
 
-    const match = contentBlock.body.match(/<!-- ROADMAP_START -->([\s\S]*?)<!-- ROADMAP_END -->/);
-    if (!match || !match[1]) {
-      throw new BadRequestException('No se encontró el mapa de ruta en el bloque de contenido.');
-    }
-
-    const roadmap = JSON.parse(match[1]);
-    const uniqueId = id.replace(/^curr-/, '');
-
-    const item = await this.prisma.curriculumItem.findUnique({ where: { id } });
-    const courseTitle = item?.title || 'Tema';
-
-    // Spawn background task again
-    void this.generateSublevelsBackground(
-      id,
-      request.contentId || '',
-      request.id,
-      roadmap,
-      apiKey,
-      uniqueId,
-      courseTitle,
-    );
-
-    return { status: 'success', message: 'Reanudando la generación en segundo plano.' };
+    return { status: 'success', message: 'Reanudando la generación de los módulos fallidos.' };
   }
 
-  private async generateSublevelsBackground(
-    _curriculumId: string,
-    contentId: string,
-    requestId: string,
-    roadmap: any[],
-    apiKey: string,
-    uniqueId: string,
-    courseTitle: string,
-  ): Promise<void> {
-    try {
-      let progress = {
-        total: 0,
-        completed: 0,
-        status: 'generating',
-        sublevels: {} as Record<string, string>,
-      };
+  async renameCurriculumItem(id: string, title: string) {
+    const item = await this.prisma.curriculumItem.findUnique({ where: { id } });
+    if (!item) {
+      throw new NotFoundException('Course not found');
+    }
+    return this.prisma.curriculumItem.update({
+      where: { id },
+      data: { title },
+    });
+  }
 
-      const existingArtifact = await this.prisma.generationArtifact.findUnique({
-        where: { requestId },
-      });
-
-      if (existingArtifact) {
-        try {
-          progress = JSON.parse(existingArtifact.contentPayload);
-          progress.status = 'generating';
-          // Ensure totals are counted correctly
-          progress.total = 0;
-          roadmap.forEach((lvl: any) => {
-            lvl.sublevels.forEach((sub: any) => {
-              const key = `${lvl.level}_${sub.title}`;
-              if (!progress.sublevels[key]) {
-                progress.sublevels[key] = 'pending';
-              }
-              progress.total++;
-            });
-          });
-        } catch (e) {
-          // Fallback to fresh progress
-        }
-      } else {
-        roadmap.forEach((lvl: any) => {
-          lvl.sublevels.forEach((sub: any) => {
-            const key = `${lvl.level}_${sub.title}`;
-            progress.sublevels[key] = 'pending';
-            progress.total++;
-          });
-        });
-
-        await this.prisma.generationArtifact.create({
-          data: {
-            id: `art-${requestId}`,
-            requestId: requestId,
-            artifactType: 'progress_status',
-            contentPayload: JSON.stringify(progress),
+  async deleteCurriculumItem(id: string) {
+    const item = await this.prisma.curriculumItem.findUnique({
+      where: { id },
+      include: {
+        levels: {
+          include: {
+            sublevels: true,
           },
+        },
+      },
+    });
+
+    if (!item) {
+      throw new NotFoundException('Course not found');
+    }
+
+    const sublevelIds = item.levels.flatMap((lvl) => lvl.sublevels.map((sub) => sub.id));
+    const contentBlockIds = item.levels
+      .flatMap((lvl) => lvl.sublevels.map((sub) => sub.contentBlockId))
+      .filter((cid): cid is string => !!cid);
+
+    await this.prisma.$transaction(async (tx) => {
+      // Clean up associated practice sessions and their AI logs
+      if (sublevelIds.length > 0) {
+        const sessions = await tx.practiceSession.findMany({
+          where: { sublevelId: { in: sublevelIds } },
+          select: { id: true },
+        });
+        const sessionIds = sessions.map((s) => s.id);
+
+        if (sessionIds.length > 0) {
+          await tx.aILog.deleteMany({
+            where: { sessionId: { in: sessionIds } },
+          });
+        }
+
+        await tx.practiceSession.deleteMany({
+          where: { sublevelId: { in: sublevelIds } },
         });
       }
 
-      let exerciseGlobalCounter = 0;
+      // Delete the item (Prisma Cascade deletes levels and sublevels)
+      await tx.curriculumItem.delete({
+        where: { id },
+      });
 
-      for (const lvl of roadmap) {
-        for (const sub of lvl.sublevels) {
-          const key = `${lvl.level}_${sub.title}`;
-
-          // Skip if already generated successfully
-          if (progress.sublevels[key] === 'completed') {
-            continue;
-          }
-
-          // Update state to processing
-          progress.sublevels[key] = 'processing';
-          await this.prisma.generationArtifact.update({
-            where: { requestId: requestId },
-            data: { contentPayload: JSON.stringify(progress) },
-          });
-
-          let retries = 3;
-          let success = false;
-
-          while (retries > 0 && !success) {
-            try {
-              const prompt2 = `Estás redactando la lección teórica detallada y el banco de preguntas para el subtema: "${sub.title}" (del nivel ${lvl.level}) del curso "${courseTitle}".
-
-Debes devolver ÚNICAMENTE un objeto JSON válido que cumpla con la siguiente estructura exacta. NO incluyas bloques de código markdown (\`\`\`json), marcas, textos de introducción ni de conclusión. Devuelve solo el objeto JSON crudo listo para ser parseado:
-{
-  "theoryMarkdown": "## ${sub.title}\\n\\n## 1. ¿Qué es?\\n[Explicación conceptual completa y clara]\\n\\n## 2. ¿Para qué sirve?\\n[Casos prácticos de aplicación]\\n\\n## 3. ¿Cómo funciona?\\n[Explicación paso a paso de su funcionamiento]\\n\\n## 4. Conceptos fundamentales\\n[Explicación de conceptos clave individuales del subtema]\\n\\n## 5. Sintaxis o estructura\\n[Ejemplos y detalles de la sintaxis del lenguaje, si aplica, sino explicar estructura conceptual]\\n\\n## 6. Ejemplo básico\\n[Ejemplo de código o procedimiento con explicación y salida de consola esperada]\\n\\n## 7. Ejemplo intermedio\\n[Ejemplo práctico de nivel medio con explicación]\\n\\n## 8. Ejemplo avanzado\\n[Ejemplo práctico complejo y realista con explicación]\\n\\n## 9. Errores comunes\\n[Menciona y explica detalladamente al menos 3 errores frecuentes]\\n\\n## 10. Buenas prácticas\\n[Lista de recomendaciones prácticas recomendadas]\\n\\n## 11. Resumen\\n[Breve resumen de ideas clave]",
-  "exercises": [
-    {
-      "title": "Quiz - ${sub.title} (Fácil)",
-      "exerciseType": "quiz",
-      "difficulty": "easy",
-      "quizData": {
-        "question": "¿Pregunta de opción múltiple fácil sobre el subtema ${sub.title}?",
-        "options": [
-          { "text": "Opción incorrecta 1", "isCorrect": false, "feedback": "Explicación de error." },
-          { "text": "Opción correcta", "isCorrect": true, "feedback": "¡Excelente!" },
-          { "text": "Opción incorrecta 2", "isCorrect": false, "feedback": "Explicación." },
-          { "text": "Opción incorrecta 3", "isCorrect": false, "feedback": "Explicación." }
-        ]
-      },
-      "hints": [
-        "Pista 1: Concepto inicial.",
-        "Pista 2: Pista técnica con detalles.",
-        "Pista 3: Ayuda avanzada para resolver."
-      ]
-    },
-    {
-      "title": "Quiz - ${sub.title} (Medio)",
-      "exerciseType": "quiz",
-      "difficulty": "medium",
-      "quizData": {
-        "question": "¿Pregunta intermedia sobre el subtema ${sub.title}?",
-        "options": [
-          { "text": "Opción incorrecta 1", "isCorrect": false, "feedback": "Explicación." },
-          { "text": "Opción correcta", "isCorrect": true, "feedback": "¡Excelente!" },
-          { "text": "Opción incorrecta 2", "isCorrect": false, "feedback": "Explicación." },
-          { "text": "Opción incorrecta 3", "isCorrect": false, "feedback": "Explicación." }
-        ]
-      },
-      "hints": [
-        "Pista 1: Ayuda intermedia.",
-        "Pista 2: Pista lógica.",
-        "Pista 3: Ayuda de código."
-      ]
-    },
-    {
-      "title": "Quiz - ${sub.title} (Difícil)",
-      "exerciseType": "quiz",
-      "difficulty": "hard",
-      "quizData": {
-        "question": "¿Escenario complejo o pregunta avanzada sobre ${sub.title}?",
-        "options": [
-          { "text": "Opción incorrecta 1", "isCorrect": false, "feedback": "Explicación." },
-          { "text": "Opción correcta", "isCorrect": true, "feedback": "¡Excelente!" },
-          { "text": "Opción incorrecta 2", "isCorrect": false, "feedback": "Explicación." },
-          { "text": "Opción incorrecta 3", "isCorrect": false, "feedback": "Explicación." }
-        ]
-      },
-      "hints": [
-        "Pista 1: Pista avanzada.",
-        "Pista 2: Pista de diseño.",
-        "Pista 3: Ayuda algorítmica."
-      ]
-    }
-  ]
-}
-
-REGLAS CRÍTICAS DE REDACCIÓN:
-1. La teoríaMarkdown DEBE tener suficiente profundidad para enseñar el concepto en sus 11 secciones. No generes introducciones superficiales.
-2. Cada sección numerada de 1 a 11 debe ser un encabezado '## [Número]. [Sección]' (ej: '## 1. ¿Qué es?') para mantener un formato uniforme. No cambies la estructura ni el orden de las secciones.`;
-
-              const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_MODEL ?? 'gemini-2.0-flash'}:generateContent?key=${apiKey}`,
-                {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt2 }] }],
-                  }),
-                },
-              );
-
-              if (!response.ok) {
-                const errText = await response.text();
-                if (response.status === 429) {
-                  console.warn(`Gemini API 429 Rate Limit hit. Pausing background task for 60 seconds...`);
-                  await this.prisma.generationArtifact.update({
-                    where: { requestId: requestId },
-                    data: {
-                      contentPayload: JSON.stringify({
-                        ...progress,
-                        status: 'waiting_quota',
-                      }),
-                    },
-                  });
-                  await new Promise((r) => setTimeout(r, 60000));
-                  throw new Error(`Excedido límite de cuota (429). Reintentando tras pausa.`);
-                }
-                throw new Error(`Error de Gemini API: ${response.status} - ${errText}`);
-              }
-
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const resData = (await response.json()) as any;
-              let text = resData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-              text = text.trim();
-              if (text.startsWith('```')) {
-                const firstLineBreak = text.indexOf('\n');
-                const lastCodeBlock = text.lastIndexOf('```');
-                if (firstLineBreak !== -1 && lastCodeBlock !== -1) {
-                  text = text.substring(firstLineBreak + 1, lastCodeBlock).trim();
-                }
-              }
-
-              const startIdx = text.indexOf('{');
-              const endIdx = text.lastIndexOf('}');
-              if (startIdx !== -1 && endIdx !== -1) {
-                text = text.substring(startIdx, endIdx + 1);
-              }
-
-              const data = JSON.parse(text);
-
-              // 1. Create exercises in Database
-              const exerciseIds: string[] = [];
-              if (Array.isArray(data.exercises)) {
-                for (let i = 0; i < data.exercises.length; i++) {
-                  const ex = data.exercises[i];
-                  const exId = `ex-${uniqueId}-${exerciseGlobalCounter++}`;
-                  exerciseIds.push(exId);
-
-                  const exercisePrompt = JSON.stringify({
-                    question: ex.quizData?.question || 'Pregunta de opción múltiple',
-                    options: ex.quizData?.options || [],
-                    hints: ex.hints || ['Pista básica', 'Pista intermedia', 'Pista avanzada'],
-                  });
-
-                  await this.prisma.exercise.create({
-                    data: {
-                      id: exId,
-                      title: ex.title || 'Práctica',
-                      prompt: exercisePrompt,
-                      exerciseType: ex.exerciseType || 'quiz',
-                      difficulty: ex.difficulty || 'easy',
-                    },
-                  });
-                }
-              }
-
-              // 2. Append/Update in ContentBlock
-              const contentBlock = await this.prisma.contentBlock.findUnique({
-                where: { id: contentId },
-              });
-
-              if (contentBlock) {
-                const match = contentBlock.body.match(
-                  /<!-- ROADMAP_START -->([\s\S]*?)<!-- ROADMAP_END -->/,
-                );
-                let updatedBody = contentBlock.body;
-
-                if (match && match[1]) {
-                  const parsedRoadmap = JSON.parse(match[1]);
-                  parsedRoadmap.forEach((l: any) => {
-                    if (l.level === lvl.level) {
-                      l.sublevels.forEach((s: any) => {
-                        if (s.title === sub.title) {
-                          s.exerciseIds = exerciseIds;
-                        }
-                      });
-                    }
-                  });
-                  updatedBody = updatedBody.replace(match[1], JSON.stringify(parsedRoadmap));
-                }
-
-                // If body has initial placeholder, remove it
-                updatedBody = updatedBody.replace('Generando lecciones en segundo plano...', '');
-
-                // Append the generated sublevel theory text with explicit markers
-                const subId = sub.subtopicId || `sub-${uniqueId}-${key.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-                const markedTheory = `\n\n<!-- LESSON_START: ${subId} -->\n${data.theoryMarkdown.trim()}\n<!-- LESSON_END: ${subId} -->`;
-                updatedBody = updatedBody.trim() + markedTheory;
-
-                await this.prisma.contentBlock.update({
-                  where: { id: contentId },
-                  data: { body: updatedBody },
-                });
-              }
-
-              progress.sublevels[key] = 'completed';
-              progress.completed++;
-              success = true;
-            } catch (e) {
-              console.error(
-                `Failed to generate sublevel "${sub.title}", retries left: ${retries - 1}`,
-                e,
-              );
-              retries--;
-              if (retries === 0) {
-                progress.sublevels[key] = 'failed';
-              }
-              await new Promise((r) => setTimeout(r, 2000));
-            }
-          }
-
-          // Update progress
-          await this.prisma.generationArtifact.update({
-            where: { requestId: requestId },
-            data: { contentPayload: JSON.stringify(progress) },
-          });
-
-          // Wait 4s between calls to strictly respect Gemini rate limits (RPM)
-          await new Promise((r) => setTimeout(r, 4000));
-        }
+      // Clean up orphaned content blocks
+      if (contentBlockIds.length > 0) {
+        await tx.contentBlock.deleteMany({
+          where: { id: { in: contentBlockIds } },
+        });
       }
+    });
 
-      // Mark GenerationRequest as completed or failed depending on subtheme errors
-      const hasFailed = Object.values(progress.sublevels || {}).some((s) => s === 'failed');
-      const finalStatus = hasFailed ? 'failed' : 'completed';
-
-      progress.status = finalStatus;
-      await this.prisma.generationRequest.update({
-        where: { id: requestId },
-        data: {
-          status: finalStatus,
-          finishedAt: new Date(),
-        },
-      });
-
-      await this.prisma.generationArtifact.update({
-        where: { requestId: requestId },
-        data: { contentPayload: JSON.stringify(progress) },
-      });
-    } catch (err) {
-      console.error('Fatal error during background sublevels generation:', err);
-      await this.prisma.generationRequest.update({
-        where: { id: requestId },
-        data: {
-          status: 'failed',
-          finishedAt: new Date(),
-        },
-      });
-    }
+    return { success: true };
   }
 }

@@ -3,12 +3,12 @@ import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { UseGuards } from '@nestjs/common';
 import { PrismaCurriculumRepository } from '@learning-os/server/infrastructure';
-import { CurriculumItemId } from '@learning-os/server/curriculum';
-import { type Uuid } from '@learning-os/server/core';
 import {
   Controller,
   Get,
   Post,
+  Patch,
+  Delete,
   Body,
   Query,
   HttpCode,
@@ -28,9 +28,7 @@ export class CurriculumController {
   constructor(
     private readonly repository: PrismaCurriculumRepository,
     private readonly generationService: CurriculumGenerationService,
-  ) {
-    void this.repository;
-  }
+  ) {}
 
   @Get('items')
   @HttpCode(HttpStatus.OK)
@@ -50,20 +48,13 @@ export class CurriculumController {
 
   @Get('items/:id')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get details of a specific curriculum item' })
-  @ApiResponse({ status: 200, type: CurriculumItemDto })
-  async getItemById(@Param('id') id: string): Promise<CurriculumItemDto> {
-    const item = await this.repository.findById(CurriculumItemId.create(id as Uuid));
+  @ApiOperation({ summary: 'Get details of a specific curriculum item with levels and sublevels' })
+  async getItemById(@Param('id') id: string) {
+    const item = await this.generationService.getItemWithDetails(id);
     if (!item) {
       throw new NotFoundException('Curriculum item not found.');
     }
-    return {
-      description: item.description,
-      difficulty: item.difficulty,
-      estimatedMins: item.estimatedMins,
-      id: item.id,
-      title: item.title,
-    };
+    return item;
   }
 
   @Get('search')
@@ -90,6 +81,14 @@ export class CurriculumController {
     return this.generationService.generate(dto.topic, dto.provider, dto.forceNew);
   }
 
+  @Post('items/:courseId/levels/:levelId/generate')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Generate theory for a specific level of a curriculum item' })
+  async generateLevel(@Param('courseId') courseId: string, @Param('levelId') levelId: string) {
+    return this.generationService.generateLevel(courseId, levelId);
+  }
+
   @Get('items/:id/generation-status')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get AI generation status of a specific curriculum item' })
@@ -99,8 +98,26 @@ export class CurriculumController {
 
   @Post('items/:id/resume')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Resume background AI generation of sublevels for a specific curriculum item' })
+  @ApiOperation({
+    summary: 'Resume background AI generation of sublevels for a specific curriculum item',
+  })
   async resumeGeneration(@Param('id') id: string) {
     return this.generationService.resume(id);
+  }
+
+  @Patch('items/:id')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Rename a curriculum item (course)' })
+  async renameItem(@Param('id') id: string, @Body() body: { title: string }) {
+    return this.generationService.renameCurriculumItem(id, body.title);
+  }
+
+  @Delete('items/:id')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete a curriculum item and all associated data' })
+  async deleteItem(@Param('id') id: string) {
+    return this.generationService.deleteCurriculumItem(id);
   }
 }

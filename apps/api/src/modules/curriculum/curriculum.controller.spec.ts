@@ -13,7 +13,7 @@ describe('CurriculumController', () => {
       title: 'DDD Core Concepts',
     });
 
-    const controller = new CurriculumController(repo);
+    const controller = new CurriculumController(repo, null as unknown as CurriculumGenerationService);
 
     const items = await controller.getItems();
     expect(Array.isArray(items)).toBe(true);

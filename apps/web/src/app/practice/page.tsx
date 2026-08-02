@@ -10,13 +10,16 @@ import { Background } from '@/components/Background';
 import { Navbar } from '@/components/Navbar';
 import { Card } from '@/components/Card';
 import { Button } from '@learning-os/ui/button';
-import { Award, CheckCircle, XCircle, ArrowLeft, ArrowRight, HelpCircle, Code } from 'lucide-react';
+import { Award, CheckCircle, XCircle, ArrowLeft, ArrowRight, HelpCircle, Code, Lightbulb } from 'lucide-react';
 
 function PracticeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const exerciseId = searchParams.get('exerciseId');
+  const exerciseIdParam = searchParams.get('exerciseId');
+  const exerciseIdsParam = searchParams.get('exerciseIds');
   const curriculumId = searchParams.get('curriculumId');
+  const sublevelKey = searchParams.get('sublevelKey');
+
   const [user] = useState<{ email: string; userId: string } | null>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('learning_os_user');
@@ -24,10 +27,17 @@ function PracticeContent() {
     }
     return null;
   });
+
+  const [exerciseIds, setExerciseIds] = useState<string[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+
+  // Hints state
+  const [hints, setHints] = useState<string[]>([]);
+  const [revealedHintsCount, setRevealedHintsCount] = useState(0);
 
   // Quiz interactive state
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -42,32 +52,23 @@ function PracticeContent() {
     feedback: string;
   } | null>(null);
 
-  // Seeded quiz options mapping
-  const quizOptions = [
-    {
-      text: 'Un objeto definido por su identidad única que cambia a lo largo de su ciclo de vida.',
-      isCorrect: false,
-    },
-    {
-      text: 'Un objeto inmutable cuyos atributos determinan por completo su identidad y no tiene ID independiente.',
-      isCorrect: true,
-    },
-    {
-      text: 'Un contenedor de base de datos que maneja la persistencia y mapeo ORM de las entidades.',
-      isCorrect: false,
-    },
-    {
-      text: 'Un evento asíncrono que propaga cambios de estado a otros microservicios.',
-      isCorrect: false,
-    },
-  ];
+  // Dynamic options mapping
+  const [parsedPrompt, setParsedPrompt] = useState<string>('');
+  const [dynamicOptions, setDynamicOptions] = useState<{ text: string; isCorrect: boolean; feedback?: string }[]>([]);
 
+  // Parse exercise parameters
   useEffect(() => {
-    if (!user) {
-      router.push('/login');
+    const list: string[] = [];
+    if (exerciseIdsParam) {
+      list.push(...exerciseIdsParam.split(','));
+    } else if (exerciseIdParam) {
+      list.push(exerciseIdParam);
     }
-  }, [user, router]);
+    setExerciseIds(list);
+    setCurrentIndex(0);
+  }, [exerciseIdParam, exerciseIdsParam]);
 
+  // Start study session
   useEffect(() => {
     if (!user || !curriculumId) return;
 
@@ -82,15 +83,17 @@ function PracticeContent() {
     void initSession();
   }, [user, curriculumId]);
 
+  // Load active exercise
   useEffect(() => {
-    async function loadExercise() {
-      if (!exerciseId) {
-        setError('ID de ejercicio no provisto.');
-        setLoading(false);
-        return;
-      }
+    if (exerciseIds.length === 0) return;
+    const activeId = exerciseIds[currentIndex];
+    if (!activeId) return;
+
+    async function loadExercise(id: string) {
+      setLoading(true);
+      setError(null);
       try {
-        const data = await getExerciseById(exerciseId);
+        const data = await getExerciseById(id);
         setExercise(data);
       } catch (err) {
         const errorVal = err as Error;
@@ -99,8 +102,62 @@ function PracticeContent() {
         setLoading(false);
       }
     }
-    void loadExercise();
-  }, [exerciseId]);
+    void loadExercise(activeId);
+  }, [exerciseIds, currentIndex]);
+
+  // Parse exercise content & hints
+  useEffect(() => {
+    if (!exercise) return;
+    try {
+      const parsed = JSON.parse(exercise.prompt);
+      if (parsed && typeof parsed === 'object') {
+        setParsedPrompt(parsed.question || exercise.prompt);
+        setDynamicOptions(parsed.options || []);
+        setHints(parsed.hints || []);
+        setRevealedHintsCount(0);
+        return;
+      }
+    } catch (e) {
+      // Ignored
+    }
+    setParsedPrompt(exercise.prompt);
+    setHints([]);
+    setRevealedHintsCount(0);
+
+    if (exercise.id === 'ex-ddd-quiz-1') {
+      setDynamicOptions([
+        {
+          text: 'Un objeto definido por su identidad única que cambia a lo largo de su ciclo de vida.',
+          isCorrect: false,
+        },
+        {
+          text: 'Un objeto inmutable cuyos atributos determinan por completo su identidad y no tiene ID independiente.',
+          isCorrect: true,
+        },
+        {
+          text: 'Un contenedor de base de datos que maneja la persistencia y mapeo ORM de las entidades.',
+          isCorrect: false,
+        },
+        {
+          text: 'Un evento asíncrono que propaga cambios de estado a otros microservicios.',
+          isCorrect: false,
+        },
+      ]);
+    } else {
+      setDynamicOptions([
+        { text: 'Opción correcta para este tema.', isCorrect: true, feedback: '¡Excelente! Respuesta correcta.' },
+        { text: 'Una opción alternativa incorrecta.', isCorrect: false, feedback: 'Incorrecto. Revisa de nuevo.' },
+        { text: 'Otra opción incorrecta para distracción.', isCorrect: false, feedback: 'Incorrecto. Inténtalo de nuevo.' },
+        { text: 'Ninguna de las anteriores.', isCorrect: false, feedback: 'Incorrecto.' },
+      ]);
+    }
+  }, [exercise]);
+
+  useEffect(() => {
+    if (!user) {
+      router.push('/login');
+    }
+  }, [user, router]);
 
   if (loading || !user) {
     return (
@@ -139,12 +196,14 @@ function PracticeContent() {
     if (selectedOption === null) return;
     setSubmitting(true);
 
-    const option = quizOptions[selectedOption];
+    const option = dynamicOptions[selectedOption];
     const isPassed = option ? option.isCorrect : false;
     const score = isPassed ? 1.0 : 0.0;
-    const feedback = isPassed
-      ? '¡Excelente! Los Value Objects se definen por sus atributos y no tienen identidad propia.'
-      : 'Inténtalo de nuevo. Recuerda que los Value Objects son inmutables y carecen de un ID único de negocio.';
+    const feedback = option?.feedback
+      ? option.feedback
+      : (isPassed
+          ? '¡Excelente! Has seleccionado la respuesta correcta.'
+          : 'Inténtalo de nuevo. Revisa el material de estudio y vuelve a intentarlo.');
 
     try {
       await submitEvaluation({
@@ -155,12 +214,23 @@ function PracticeContent() {
         feedback,
       });
 
-      if (isPassed && sessionId && curriculumId) {
+      const isLast = currentIndex === exerciseIds.length - 1;
+      if (isPassed && isLast && sessionId && curriculumId) {
         try {
           await completeSessionItem(sessionId, curriculumId);
           await finishSession(sessionId);
         } catch (sessErr) {
           console.error('Failed to update session tracking:', sessErr);
+        }
+
+        if (sublevelKey) {
+          const progressKey = `roadmap_progress_${user.userId}_${curriculumId}`;
+          const stored = localStorage.getItem(progressKey);
+          const currentCompleted = stored ? JSON.parse(stored) : [];
+          if (!currentCompleted.includes(sublevelKey)) {
+            const updated = [...currentCompleted, sublevelKey];
+            localStorage.setItem(progressKey, JSON.stringify(updated));
+          }
         }
       }
 
@@ -176,7 +246,6 @@ function PracticeContent() {
     if (!codeAnswer.trim()) return;
     setSubmitting(true);
 
-    // Simple validation rule: check if they defined UserRepository or mentioned Dependency Inversion
     const lowercaseAnswer = codeAnswer.toLowerCase();
     const isPassed =
       lowercaseAnswer.includes('interface userrepository') ||
@@ -195,12 +264,23 @@ function PracticeContent() {
         feedback,
       });
 
-      if (isPassed && sessionId && curriculumId) {
+      const isLast = currentIndex === exerciseIds.length - 1;
+      if (isPassed && isLast && sessionId && curriculumId) {
         try {
           await completeSessionItem(sessionId, curriculumId);
           await finishSession(sessionId);
         } catch (sessErr) {
           console.error('Failed to update session tracking:', sessErr);
+        }
+
+        if (sublevelKey) {
+          const progressKey = `roadmap_progress_${user.userId}_${curriculumId}`;
+          const stored = localStorage.getItem(progressKey);
+          const currentCompleted = stored ? JSON.parse(stored) : [];
+          if (!currentCompleted.includes(sublevelKey)) {
+            const updated = [...currentCompleted, sublevelKey];
+            localStorage.setItem(progressKey, JSON.stringify(updated));
+          }
         }
       }
 
@@ -211,6 +291,16 @@ function PracticeContent() {
       setSubmitting(false);
     }
   };
+
+  const handleNextExercise = () => {
+    setSelectedOption(null);
+    setCodeAnswer('');
+    setResult(null);
+    setRevealedHintsCount(0);
+    setCurrentIndex((prev) => prev + 1);
+  };
+
+  const percentCompleted = exerciseIds.length > 0 ? Math.round((currentIndex / exerciseIds.length) * 100) : 0;
 
   return (
     <div className="relative flex min-h-screen flex-col pt-24 pb-16">
@@ -227,6 +317,22 @@ function PracticeContent() {
           Volver atrás
         </button>
 
+        {/* Progress Tracker */}
+        {exerciseIds.length > 1 && (
+          <div className="space-y-1 bg-card border-border shadow-neobrutalism-sm border-2 rounded-xl p-4">
+            <div className="flex justify-between text-xs font-bold text-muted-foreground uppercase tracking-wide">
+              <span>Ejercicio {currentIndex + 1} de {exerciseIds.length}</span>
+              <span>{percentCompleted}%</span>
+            </div>
+            <div className="h-2 w-full bg-muted border border-border/10 rounded-full overflow-hidden">
+              <div
+                className="bg-primary h-full rounded-full transition-all duration-300"
+                style={{ width: `${percentCompleted}%` }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Exercise prompt card */}
         <Card className="border-border bg-card shadow-neobrutalism-sm space-y-3 border-2 p-6">
           <div className="text-primary flex items-center gap-2 text-xs font-semibold tracking-wide uppercase">
@@ -237,9 +343,9 @@ function PracticeContent() {
             )}
             {exercise.exerciseType} • dificultad: {exercise.difficulty}
           </div>
-          <h1 className="font-display text-2xl font-bold tracking-wide">{exercise.title}</h1>
+          <h1 className="font-display text-xl font-bold tracking-wide">{exercise.title}</h1>
           <p className="text-foreground/80 font-sans text-sm leading-relaxed whitespace-pre-line">
-            {exercise.prompt}
+            {parsedPrompt}
           </p>
         </Card>
 
@@ -247,9 +353,8 @@ function PracticeContent() {
         {!result ? (
           <Card className="border-border bg-card shadow-neobrutalism space-y-6 border-2 p-6">
             {exercise.exerciseType === 'quiz' ? (
-              /* Quiz options list */
               <div className="space-y-3">
-                {quizOptions.map((opt, index) => (
+                {dynamicOptions.map((opt, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedOption(index)}
@@ -276,7 +381,6 @@ function PracticeContent() {
                 </Button>
               </div>
             ) : (
-              /* Code textarea input */
               <div className="space-y-4">
                 <textarea
                   value={codeAnswer}
@@ -294,6 +398,36 @@ function PracticeContent() {
                 >
                   {submitting ? 'Evaluando...' : 'Enviar Solución de Código'}
                 </Button>
+              </div>
+            )}
+
+            {/* Hints Section */}
+            {hints.length > 0 && (
+              <div className="space-y-2 border-t border-border/10 pt-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                    <Lightbulb className="h-3.5 w-3.5 text-yellow-500" />
+                    Ayuda de la IA
+                  </h3>
+                  {revealedHintsCount < 3 && (
+                    <button
+                      onClick={() => setRevealedHintsCount((prev) => prev + 1)}
+                      className="text-primary hover:underline text-xs font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      Solicitar Pista ({revealedHintsCount}/3)
+                    </button>
+                  )}
+                </div>
+                {revealedHintsCount > 0 && (
+                  <div className="space-y-2 mt-2">
+                    {hints.slice(0, revealedHintsCount).map((hint, i) => (
+                      <div key={i} className="bg-muted border border-border/10 rounded-xl p-3 text-xs font-medium text-foreground/80 flex items-start gap-2">
+                        <span className="text-primary font-bold">Pista {i + 1}:</span>
+                        <span>{hint}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </Card>
@@ -315,8 +449,10 @@ function PracticeContent() {
                 </div>
               )}
 
-              <h2 className="font-display text-3xl font-bold tracking-wide">
-                {result.isPassed ? '¡Práctica Aprobada!' : 'Intento Fallido'}
+              <h2 className="font-display text-2xl font-bold tracking-wide">
+                {result.isPassed
+                  ? (currentIndex < exerciseIds.length - 1 ? '¡Correcto!' : '¡Práctica Completada!')
+                  : 'Intento Fallido'}
               </h2>
 
               <div className="border-border bg-card font-display shadow-neobrutalism-sm mt-2 inline-flex items-center gap-1.5 rounded-full border-2 px-3 py-1 text-xs font-bold">
@@ -325,23 +461,52 @@ function PracticeContent() {
               </div>
             </div>
 
-            <p className="text-muted-foreground mx-auto max-w-md font-sans text-sm leading-relaxed md:text-base">
+            <p className="text-muted-foreground mx-auto max-w-md font-sans text-sm leading-relaxed">
               {result.feedback}
             </p>
 
             <div className="flex flex-col justify-center gap-4 pt-4 sm:flex-row">
-              <Button asChild variant="neobrutalismOutline" className="cursor-pointer">
-                <Link href="/dashboard" className="flex items-center gap-2">
-                  <ArrowLeft className="h-4 w-4" />
-                  Ir al Dashboard
-                </Link>
-              </Button>
-              <Button asChild variant="neobrutalism" className="cursor-pointer">
-                <Link href="/curriculum" className="flex items-center gap-2">
-                  Continuar Aprendiendo
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
+              {!result.isPassed ? (
+                // Retry button if failed
+                <Button
+                  onClick={() => {
+                    setResult(null);
+                    setSelectedOption(null);
+                    setCodeAnswer('');
+                  }}
+                  variant="neobrutalism"
+                  className="cursor-pointer px-6"
+                >
+                  Volver a intentar
+                </Button>
+              ) : (
+                // Next or Finish buttons if passed
+                currentIndex < exerciseIds.length - 1 ? (
+                  <Button
+                    onClick={handleNextExercise}
+                    variant="neobrutalism"
+                    className="cursor-pointer px-6 flex items-center gap-2"
+                  >
+                    Siguiente Ejercicio
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <>
+                    <Button asChild variant="neobrutalismOutline" className="cursor-pointer">
+                      <Link href="/dashboard" className="flex items-center gap-2">
+                        <ArrowLeft className="h-4 w-4" />
+                        Ir al Dashboard
+                      </Link>
+                    </Button>
+                    <Button asChild variant="neobrutalism" className="cursor-pointer">
+                      <Link href={curriculumId ? `/curriculum/${curriculumId}` : '/curriculum'} className="flex items-center gap-2">
+                        Continuar Aprendiendo
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </>
+                )
+              )}
             </div>
           </Card>
         )}

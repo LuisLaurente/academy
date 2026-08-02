@@ -4,10 +4,13 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule } from './app.module';
+import { AuthGuard } from './modules/auth/auth.guard';
 
 async function bootstrap(): Promise<void> {
   const logger = new ConsoleLogger({ colors: false, json: true, prefix: 'learning-os-api' });
   const app = await NestFactory.create(AppModule, { logger });
+  // Register AuthGuard globally to attach user info before role checks
+  app.useGlobalGuards(new AuthGuard());
   const config = app.get(ConfigService);
   const port = config.getOrThrow<number>('API_PORT');
   const corsOrigin = config.getOrThrow<string>('CORS_ORIGIN');

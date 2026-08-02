@@ -30,6 +30,24 @@ async function main(): Promise<void> {
     where: { id: studentId },
   });
 
+  // Seed Admin User
+  const adminId = 'admin-uuid-999';
+  await prisma.user.upsert({
+    create: {
+      credentials: {
+        create: {
+          passwordHash: '$2b$10$e81Z21z8890x10101010101010101010101010101010101010101',
+        },
+      },
+      email: 'admin@academy.edu',
+      id: adminId,
+      isActive: true,
+      role: 'admin',
+    },
+    update: {},
+    where: { id: adminId },
+  });
+
   // 2. Seed Curriculum Items
   const item1 = {
     description:

@@ -7,16 +7,11 @@ import { Background } from '@/components/Background';
 import { Navbar } from '@/components/Navbar';
 import { Card } from '@/components/Card';
 import { Award, CheckCircle2, XCircle, BookOpen } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [user] = useState<{ email: string; userId: string } | null>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('learning_os_user');
-      return stored ? JSON.parse(stored) : null;
-    }
-    return null;
-  });
+  const { user, isAuthenticated } = useAuth();
   const [evaluations, setEvaluations] = useState<readonly EvaluationResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -43,12 +38,12 @@ export default function ProfilePage() {
     void loadProfileData();
   }, [user]);
 
-  if (loading || !user) {
+  if (loading || !isAuthenticated) {
     return (
       <div className="relative flex min-h-screen flex-col items-center justify-center pt-24">
         <Background />
         <Navbar />
-        <div className="border-primary mb-4 h-10 w-10 animate-spin rounded-full border-4 border-t-transparent"></div>
+        <div className="border-primary mb-4 h-10 w-10 animate-spin rounded-full border-4 border-t-transparent" />
         <p className="text-muted-foreground font-display text-sm font-bold">Cargando perfil...</p>
       </div>
     );

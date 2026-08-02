@@ -10,6 +10,7 @@ import { Background } from '@/components/Background';
 import { Navbar } from '@/components/Navbar';
 import { Card } from '@/components/Card';
 import { Button } from '@learning-os/ui/button';
+import { useAuth } from '@/context/AuthContext';
 import { Sparkles, BookOpen, Clock, Award, CheckCircle2, ArrowRight, User } from 'lucide-react';
 
 interface ResolvedRecommendation {
@@ -23,23 +24,16 @@ interface ResolvedRecommendation {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [user] = useState<{ email: string; userId: string } | null>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('learning_os_user');
-      return stored ? JSON.parse(stored) : null;
-    }
-    return null;
-  });
+  const { user, isAuthenticated, logout } = useAuth();
   const [recommendations, setRecommendations] = useState<readonly ResolvedRecommendation[]>([]);
   const [evaluations, setEvaluations] = useState<readonly EvaluationResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Check Auth
-    if (!user) {
+    if (!isAuthenticated) {
       router.push('/login');
     }
-  }, [user, router]);
+  }, [isAuthenticated, router]);
 
   useEffect(() => {
     if (!user) return;
@@ -106,7 +100,7 @@ export default function DashboardPage() {
     void loadDashboardData();
   }, [user]);
 
-  if (loading || !user) {
+  if (loading || !isAuthenticated) {
     return (
       <div className="relative flex min-h-screen flex-col items-center justify-center pt-24">
         <Background />
@@ -137,14 +131,13 @@ export default function DashboardPage() {
             </h1>
             <p className="text-muted-foreground flex items-center gap-1.5 font-sans text-sm">
               <User className="text-primary h-4 w-4" />
-              {user.email}
+              {user?.email}
             </p>
           </div>
           <div className="flex gap-2">
             <Button
               onClick={() => {
-                localStorage.removeItem('learning_os_user');
-                localStorage.removeItem('learning_os_token');
+                logout();
                 router.push('/login');
               }}
               variant="neobrutalismOutline"

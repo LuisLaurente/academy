@@ -10,6 +10,10 @@ COPY packages/ ./packages/
 COPY apps/web/ ./apps/web/
 
 RUN pnpm install --frozen-lockfile --ignore-scripts
+
+ARG NEXT_PUBLIC_API_URL=http://localhost:3002/api/v1
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 RUN pnpm --filter @learning-os/web build
 
 # Stage 2: Runner

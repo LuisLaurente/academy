@@ -24,14 +24,47 @@ export class PrismaExerciseRepository implements ExerciseRepository {
   }
 
   async findById(id: string): Promise<ExerciseRecord | null> {
+    if (this.dbClient) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (this.dbClient as any).exercise.findUnique({
+        where: { id },
+      });
+    }
     return this.memoryStore.get(id) ?? null;
   }
 
   async save(exercise: ExerciseRecord): Promise<void> {
+    if (this.dbClient) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (this.dbClient as any).exercise.upsert({
+        where: { id: exercise.id },
+        update: {
+          difficulty: exercise.difficulty,
+          exerciseType: exercise.exerciseType,
+          prompt: exercise.prompt,
+          title: exercise.title,
+        },
+        create: {
+          difficulty: exercise.difficulty,
+          exerciseType: exercise.exerciseType,
+          id: exercise.id,
+          prompt: exercise.prompt,
+          title: exercise.title,
+        },
+      });
+      return;
+    }
     this.memoryStore.set(exercise.id, exercise);
   }
 
   async delete(id: string): Promise<void> {
+    if (this.dbClient) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (this.dbClient as any).exercise.delete({
+        where: { id },
+      });
+      return;
+    }
     this.memoryStore.delete(id);
   }
 }

@@ -2,28 +2,16 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, Compass, Award, User as UserIcon, Sun, Moon, Shield } from 'lucide-react';
 import { useTheme } from 'next-themes';
-
-import { useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { Button } from '@learning-os/ui/button';
+import { Compass, BookOpen, Award, User as UserIcon, Shield, Sun, Moon } from 'lucide-react';
 
 export function Navbar() {
+  const { user, isAuthenticated, isLoading } = useAuth();
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
-  const [role] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('learning_os_user');
-      if (stored) {
-        try {
-          const user = JSON.parse(stored);
-          return user.role || null;
-        } catch (e) {
-          console.error(e);
-        }
-      }
-    }
-    return null;
-  });
+  const role = user?.role || null;
 
   const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: Compass },
@@ -46,30 +34,43 @@ export function Navbar() {
           </span>
         </Link>
 
-        {/* Menu Items */}
-        <div className="flex items-center gap-1 md:gap-2">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            const Icon = item.icon;
+        {/* Menu Items (Authenticated) or Auth Actions (Unauthenticated) */}
+        {!isLoading && (
+          isAuthenticated ? (
+            <div className="flex items-center gap-1 md:gap-2">
+              {navItems.map((item) => {
+                const isActive = pathname === item.href;
+                const Icon = item.icon;
 
-            return (
-              <Link key={item.href} href={item.href} className="relative">
-                <div
-                  className={`flex items-center gap-1.5 rounded-full border-2 px-3 py-1.5 text-xs font-medium transition-all md:text-sm ${
-                    isActive
-                      ? 'bg-muted text-foreground border-border shadow-neobrutalism-sm font-semibold'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 border-transparent'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span className="hidden md:inline-block">{item.label}</span>
-                </div>
+                return (
+                  <Link key={item.href} href={item.href} className="relative">
+                    <div
+                      className={`flex items-center gap-1.5 rounded-full border-2 px-3 py-1.5 text-xs font-medium transition-all md:text-sm ${
+                        isActive
+                          ? 'bg-muted text-foreground border-border shadow-neobrutalism-sm font-semibold'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 border-transparent'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span className="hidden md:inline-block">{item.label}</span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Link href="/login" className="text-xs font-semibold hover:underline md:text-sm">
+                Iniciar Sesión
               </Link>
-            );
-          })}
-        </div>
+              <Button asChild variant="neobrutalism" className="h-8 cursor-pointer px-3 text-xs md:h-9 md:px-4">
+                <Link href="/register">Empezar Gratis</Link>
+              </Button>
+            </div>
+          )
+        )}
 
-        {/* Theme & Profile Toggle */}
+        {/* Theme Toggle */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}

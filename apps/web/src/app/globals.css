@@ -135,3 +135,25 @@ body {
     linear-gradient(to right, rgba(253, 251, 247, 0.04) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(253, 251, 247, 0.04) 1px, transparent 1px);
 }
+
+@keyframes progress-loading {
+  0% {
+    width: 0%;
+  }
+  30% {
+    width: 35%;
+  }
+  60% {
+    width: 70%;
+  }
+  90% {
+    width: 92%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-progress-glow {
+  animation: progress-loading 15s cubic-bezier(0.1, 0.8, 0.1, 1) infinite;
+}

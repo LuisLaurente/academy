@@ -1,32 +1,20 @@
+'use client';
+
 import Link from 'next/link';
 import { Button } from '@learning-os/ui/button';
 import { Background } from '@/components/Background';
+import { Navbar } from '@/components/Navbar';
 import { Card } from '@/components/Card';
-import { Flame, ArrowRight, ShieldCheck } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { Flame, ArrowRight, ShieldCheck, LayoutDashboard } from 'lucide-react';
 
 export default function HomePage() {
+  const { isAuthenticated, isLoading } = useAuth();
+
   return (
-    <div className="relative flex min-h-screen flex-col justify-between overflow-hidden">
+    <div className="relative flex min-h-screen flex-col justify-between overflow-hidden pt-16">
       <Background />
-
-      {/* Header */}
-      <header className="z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="group flex items-center gap-2 select-none">
-          <div className="bg-primary border-border font-display shadow-neobrutalism-sm flex h-9 w-9 items-center justify-center rounded-full border-2 font-bold text-white transition-all group-hover:-translate-y-[0.5px] group-hover:shadow-[3px_3px_0px_0px_rgba(26,26,26,1)]">
-            L
-          </div>
-          <span className="font-display text-xl font-bold tracking-wide">Learning OS</span>
-        </Link>
-
-        <div className="flex items-center gap-4">
-          <Link href="/login" className="text-sm font-semibold hover:underline">
-            Iniciar Sesión
-          </Link>
-          <Button asChild variant="neobrutalism" className="cursor-pointer">
-            <Link href="/register">Empezar Gratis</Link>
-          </Button>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Hero Section */}
       <main className="z-10 mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 items-center gap-12 px-6 py-12 md:grid-cols-12 md:py-24">
@@ -50,15 +38,26 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-wrap gap-4 pt-2">
-            <Button asChild variant="neobrutalism" className="h-12 cursor-pointer px-6">
-              <Link href="/register" className="flex items-center gap-2">
-                Crear mi Ruta
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button asChild variant="neobrutalismOutline" className="h-12 cursor-pointer px-6">
-              <Link href="/login">Acceder a mi Cuenta</Link>
-            </Button>
+            {isAuthenticated ? (
+              <Button asChild variant="neobrutalism" className="h-12 cursor-pointer px-6">
+                <Link href="/dashboard" className="flex items-center gap-2">
+                  <LayoutDashboard className="h-4 w-4" />
+                  Ir a mi Dashboard
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Button asChild variant="neobrutalism" className="h-12 cursor-pointer px-6">
+                  <Link href="/register" className="flex items-center gap-2">
+                    Crear mi Ruta
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button asChild variant="neobrutalismOutline" className="h-12 cursor-pointer px-6">
+                  <Link href="/login">Acceder a mi Cuenta</Link>
+                </Button>
+              </>
+            )}
           </div>
         </section>
 

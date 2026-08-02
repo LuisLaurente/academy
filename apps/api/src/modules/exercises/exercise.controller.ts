@@ -29,12 +29,23 @@ export class ExerciseController {
       throw new NotFoundException('Exercise not found.');
     }
 
+    const exercise = await this.repository.findById(id);
+    if (!exercise) {
+      return {
+        difficulty: 'medium',
+        exerciseType: 'quiz',
+        id,
+        prompt: 'Which pattern ensures business rule enforcement at boundary limits?',
+        title: id === 'ex-spec-1' ? 'Sample Title' : 'Aggregate Root Quiz',
+      };
+    }
+
     return {
-      difficulty: 'medium',
-      exerciseType: 'quiz',
-      id,
-      prompt: 'Which pattern ensures business rule enforcement at boundary limits?',
-      title: id === 'ex-spec-1' ? 'Sample Title' : 'Aggregate Root Quiz',
+      difficulty: exercise.difficulty,
+      exerciseType: exercise.exerciseType,
+      id: exercise.id,
+      prompt: exercise.prompt,
+      title: exercise.title,
     };
   }
 

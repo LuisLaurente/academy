@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import {
   getCurriculumItems,
   generateSyllabus,
@@ -16,9 +17,12 @@ import { BookOpen, Clock, AlertCircle, ArrowRight, Sparkles, HelpCircle } from '
 
 export default function CurriculumPage() {
   const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
   const [items, setItems] = useState<readonly CurriculumItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const isAdmin = user?.role === 'admin';
 
   // AI Generation States
   const [topicInput, setTopicInput] = useState('');
@@ -27,7 +31,32 @@ export default function CurriculumPage() {
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<readonly CurriculumItem[] | null>(null);
 
+  const loadingMessages = [
+    'Conectando con el orquestador de IA...',
+    'Analizando la estructura pedagógica de tu tema...',
+    'Diseñando niveles (Básico, Intermedio, Avanzado, Profesional)...',
+    'Generando material teórico y lecturas clave...',
+    'Creando evaluación formativa y retos interactivos...',
+    'Estructurando base de datos de tu ruta personalizada...',
+    'Cargando detalles finales para tu viaje de estudio...'
+  ];
+
+  const [messageIndex, setMessageIndex] = useState(0);
+
   useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (generating) {
+      setMessageIndex(0);
+      interval = setInterval(() => {
+        setMessageIndex((prev) => (prev + 1) % loadingMessages.length);
+      }, 2500);
+    }
+    return () => clearInterval(interval);
+  }, [generating]);
+
+  useEffect(() => {
+    if (authLoading) return;
+
     async function loadCurriculum() {
       try {
         const data = await getCurriculumItems();
@@ -40,7 +69,7 @@ export default function CurriculumPage() {
       }
     }
     void loadCurriculum();
-  }, []);
+  }, [authLoading]);
 
   const handleGenerate = async (force = false) => {
     if (!topicInput.trim()) return;
@@ -89,121 +118,182 @@ export default function CurriculumPage() {
         </section>
 
         {/* AI Syllabus Generator Box */}
-        <Card className="border-border bg-sage-pale/20 dark:bg-card shadow-neobrutalism-sm border-2 p-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Sparkles className="text-primary h-5 w-5 animate-pulse" />
-              <h2 className="font-display text-lg font-bold">Generar Nueva Ruta con IA</h2>
-            </div>
-
-            <p className="text-muted-foreground font-sans text-xs">
-              Ingresa un tema (ej: Python para Análisis de Datos, Fundamentos de Rust) y la IA
-              diseñará un temario completo, teoría y retos prácticos.
-            </p>
-
-            {generationError && (
-              <div className="border-primary bg-coral-red/5 text-primary flex items-center gap-2 rounded-lg border p-3 text-xs font-medium">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{generationError}</span>
+        {isAdmin ? (
+          <Card className="border-border bg-sage-pale/20 dark:bg-card shadow-neobrutalism-sm border-2 p-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="text-primary h-5 w-5 animate-pulse" />
+                <h2 className="font-display text-lg font-bold">Generar Nueva Ruta con IA (Admin)</h2>
               </div>
-            )}
 
-            {duplicates && duplicates.length > 0 && (
-              <div className="border-primary bg-primary/5 flex flex-col gap-3 rounded-lg border-2 p-4">
-                <div className="flex items-center gap-2">
-                  <HelpCircle className="text-primary h-5 w-5 shrink-0" />
-                  <h4 className="font-display text-sm font-bold">
-                    ¿Deseas reutilizar un temario existente?
-                  </h4>
+              <p className="text-muted-foreground font-sans text-xs">
+                Ingresa un tema (ej: Python para Análisis de Datos, Fundamentos de Rust) y la IA
+                diseñará un temario completo, teoría y retos prácticos.
+              </p>
+
+              {generationError && (
+                <div className="border-primary bg-coral-red/5 text-primary flex items-center gap-2 rounded-lg border p-3 text-xs font-medium">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{generationError}</span>
                 </div>
-                <p className="text-muted-foreground text-xs">
-                  Encontramos rutas de aprendizaje similares en el sistema:
-                </p>
-                <div className="space-y-2">
-                  {duplicates.map((dup) => (
-                    <div
-                      key={dup.id}
-                      className="bg-card border-border flex items-center justify-between rounded-lg border p-2.5"
-                    >
-                      <div>
-                        <h5 className="font-display text-xs font-bold">{dup.title}</h5>
-                        <p className="text-muted-foreground line-clamp-1 font-sans text-[10px]">
-                          {dup.description}
-                        </p>
-                      </div>
-                      <Button
-                        asChild
-                        variant="neobrutalism"
-                        className="h-7 cursor-pointer px-2 text-[10px]"
+              )}
+
+              {duplicates && duplicates.length > 0 && (
+                <div className="border-primary bg-primary/5 flex flex-col gap-3 rounded-lg border-2 p-4">
+                  <div className="flex items-center gap-2">
+                    <HelpCircle className="text-primary h-5 w-5 shrink-0" />
+                    <h4 className="font-display text-sm font-bold">
+                      ¿Deseas reutilizar un temario existente?
+                    </h4>
+                  </div>
+                  <p className="text-muted-foreground text-xs">
+                    Encontramos rutas de aprendizaje similares en el sistema:
+                  </p>
+                  <div className="space-y-2">
+                    {duplicates.map((dup) => (
+                      <div
+                        key={dup.id}
+                        className="bg-card border-border flex items-center justify-between rounded-lg border p-2.5"
                       >
-                        <Link href={`/curriculum/${dup.id}`}>Ver ruta</Link>
-                      </Button>
-                    </div>
-                  ))}
+                        <div>
+                          <h5 className="font-display text-xs font-bold">{dup.title}</h5>
+                          <p className="text-muted-foreground line-clamp-1 font-sans text-[10px]">
+                            {dup.description}
+                          </p>
+                        </div>
+                        <Button
+                          asChild
+                          variant="neobrutalism"
+                          className="h-7 cursor-pointer px-2 text-[10px]"
+                        >
+                          <Link href={`/curriculum/${dup.id}`}>Ver ruta</Link>
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <Button
+                      onClick={() => setDuplicates(null)}
+                      variant="neobrutalismOutline"
+                      className="h-8 cursor-pointer px-3 text-xs"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={() => handleGenerate(true)}
+                      variant="neobrutalism"
+                      className="h-8 cursor-pointer px-3 text-xs"
+                    >
+                      Generar Nuevo De Todas Formas
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button
-                    onClick={() => setDuplicates(null)}
-                    variant="neobrutalismOutline"
-                    className="h-8 cursor-pointer px-3 text-xs"
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={() => handleGenerate(true)}
-                    variant="neobrutalism"
-                    className="h-8 cursor-pointer px-3 text-xs"
-                  >
-                    Generar Nuevo De Todas Formas
-                  </Button>
-                </div>
-              </div>
-            )}
+              )}
 
-            {!duplicates && (
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <div className="flex flex-1 gap-2">
-                  <input
-                    type="text"
-                    placeholder="Escribe el tema que deseas aprender..."
-                    value={topicInput}
-                    onChange={(e) => setTopicInput(e.target.value)}
-                    disabled={generating}
-                    className="border-border bg-background shadow-neobrutalism-sm focus:ring-ring w-full rounded-lg border-2 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
-                  />
-                  <select
-                    value={providerInput}
-                    onChange={(e) => setProviderInput(e.target.value)}
-                    disabled={generating}
-                    className="border-border bg-background shadow-neobrutalism-sm focus:ring-ring shrink-0 rounded-lg border-2 px-2 py-2 text-xs font-bold focus:outline-none"
-                  >
-                    <option value="gemini">Gemini</option>
-                    <option value="deepseek">DeepSeek</option>
-                    <option value="codex">Codex</option>
-                  </select>
-                </div>
-                <Button
-                  onClick={() => handleGenerate(false)}
-                  disabled={generating || !topicInput.trim()}
-                  variant="neobrutalism"
-                  className="flex shrink-0 cursor-pointer items-center justify-center gap-1.5 px-4 font-bold"
-                >
-                  {generating ? (
-                    <>
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                      Generando...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4" />
-                      Diseñar Ruta
-                    </>
+              {!duplicates && (
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <div className="flex flex-1 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Escribe el tema que deseas aprender..."
+                        value={topicInput}
+                        onChange={(e) => setTopicInput(e.target.value)}
+                        disabled={generating}
+                        className="border-border bg-background shadow-neobrutalism-sm focus:ring-ring w-full rounded-lg border-2 px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+                      />
+                      <select
+                        value={providerInput}
+                        onChange={(e) => setProviderInput(e.target.value)}
+                        disabled={generating}
+                        className="border-border bg-background shadow-neobrutalism-sm focus:ring-ring shrink-0 rounded-lg border-2 px-2 py-2 text-xs font-bold focus:outline-none"
+                      >
+                        <option value="gemini">Gemini</option>
+                        <option value="deepseek">DeepSeek</option>
+                        <option value="codex">Codex</option>
+                      </select>
+                    </div>
+                    <Button
+                      onClick={() => handleGenerate(false)}
+                      disabled={generating || !topicInput.trim()}
+                      variant="neobrutalism"
+                      className="flex shrink-0 cursor-pointer items-center justify-center gap-1.5 px-4 font-bold"
+                    >
+                      {generating ? (
+                        <>
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                          Generando...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4" />
+                          Diseñar Ruta
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  {generating && (
+                    <div className="border-border bg-muted/10 mt-4 rounded-xl border-2 p-6 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-primary/10 border-primary text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 animate-bounce">
+                          <Sparkles className="h-5 w-5 animate-pulse" />
+                        </div>
+                        <div className="space-y-1 w-full">
+                          <h3 className="font-display text-sm font-bold text-foreground">
+                            Generando tu Ruta de Aprendizaje Personalizada
+                          </h3>
+                          <p className="text-primary text-xs font-semibold animate-pulse transition-all duration-300">
+                            {loadingMessages[messageIndex]}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Animated progress bar */}
+                      <div className="space-y-1.5">
+                        <div className="border-border/20 bg-muted h-3 w-full overflow-hidden rounded-full border">
+                          <div className="bg-primary h-full rounded-full animate-progress-glow" />
+                        </div>
+                        <div className="flex justify-between items-center text-[10px] text-muted-foreground font-semibold">
+                          <span>Preparando material pedagógico...</span>
+                          <span>Esto puede tomar unos 10-15 segundos</span>
+                        </div>
+                      </div>
+
+                      {/* Skeleton roadmap preview */}
+                      <div className="border-border/10 border-t pt-4 space-y-3 opacity-60 pointer-events-none select-none">
+                        <div className="flex items-center gap-2">
+                          <div className="bg-muted h-4 w-12 rounded animate-pulse" />
+                          <div className="bg-muted h-3 w-32 rounded animate-pulse" />
+                        </div>
+                        <div className="flex items-center gap-2 pl-4">
+                          <div className="bg-muted h-2 w-2 rounded-full" />
+                          <div className="bg-muted h-2.5 w-24 rounded animate-pulse" />
+                        </div>
+                        <div className="flex items-center gap-2 pl-4">
+                          <div className="bg-muted h-2 w-2 rounded-full" />
+                          <div className="bg-muted h-2.5 w-28 rounded animate-pulse" />
+                        </div>
+                      </div>
+                    </div>
                   )}
-                </Button>
+                </div>
+              )}
+            </div>
+          </Card>
+        ) : (
+          <Card className="border-border bg-muted/20 shadow-neobrutalism-sm border-2 p-6">
+            <div className="flex items-center gap-3">
+              <Sparkles className="text-muted-foreground h-5 w-5 opacity-40 shrink-0" />
+              <div className="space-y-0.5">
+                <h3 className="font-display text-sm font-bold">Generación con IA reservada para Administradores</h3>
+                <p className="text-muted-foreground font-sans text-xs">
+                  Para optimizar recursos y cuotas de servicio, solo las cuentas de tipo Administrador pueden diseñar nuevas rutas curriculares con IA. Si necesitas una ruta que no esté en el catálogo de abajo, por favor solicítala a tu profesor.
+                </p>
               </div>
-            )}
-          </div>
-        </Card>
+            </div>
+          </Card>
+        )}
 
         {/* Content */}
         {loading ? (

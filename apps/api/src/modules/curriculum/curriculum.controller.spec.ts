@@ -1,6 +1,7 @@
 import { PrismaCurriculumRepository } from '@learning-os/server/infrastructure';
 import { describe, expect, it } from 'vitest';
 import { CurriculumController } from './curriculum.controller';
+import { CurriculumGenerationService } from './curriculum-generation.service';
 
 describe('CurriculumController', () => {
   it('lists items and retrieves item by id', async () => {
@@ -13,7 +14,18 @@ describe('CurriculumController', () => {
       title: 'DDD Core Concepts',
     });
 
-    const controller = new CurriculumController(repo, null as unknown as CurriculumGenerationService);
+    const generationServiceMock = {
+      getItemWithDetails: async (id: string) => ({
+        id,
+        title: 'DDD Core Concepts',
+        description: 'Fundamentals of Domain-Driven Design',
+        difficulty: 'intermediate',
+        estimatedMins: 45,
+        levels: [],
+      }),
+    } as unknown as CurriculumGenerationService;
+
+    const controller = new CurriculumController(repo, generationServiceMock);
 
     const items = await controller.getItems();
     expect(Array.isArray(items)).toBe(true);

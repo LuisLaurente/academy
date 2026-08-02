@@ -38,7 +38,7 @@ export default function ProfilePage() {
     void loadProfileData();
   }, [user]);
 
-  if (loading || !isAuthenticated) {
+  if (loading || !isAuthenticated || !user) {
     return (
       <div className="relative flex min-h-screen flex-col items-center justify-center pt-24">
         <Background />

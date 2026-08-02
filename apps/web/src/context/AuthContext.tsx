@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+'use client';
+
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { setAuthToken, removeAuthToken } from '@/config/api-client';
 
 interface UserInfo {
@@ -81,4 +83,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-

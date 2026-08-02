@@ -9,7 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Flame, ArrowRight, ShieldCheck, LayoutDashboard } from 'lucide-react';
 
 export default function HomePage() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   return (
     <div className="relative flex min-h-screen flex-col justify-between overflow-hidden pt-16">

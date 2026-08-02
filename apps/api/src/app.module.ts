@@ -17,7 +17,9 @@ import { RecommendationModule } from './modules/recommendation/recommendation.mo
 import { SessionModule } from './modules/session/session.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { WorkflowModule } from './modules/workflow/workflow.module';
+import { PracticeModule } from './modules/practice/practice.module';
 import { AllExceptionsFilter } from './platform/errors/all-exceptions.filter';
+
 import { HealthModule } from './platform/health/health.module';
 import { CorrelationInterceptor } from './platform/observability/correlation.interceptor';
 import { RequestLoggingInterceptor } from './platform/observability/request-logging.interceptor';
@@ -47,7 +49,9 @@ const environment = process.env.NODE_ENV ?? 'development';
     AIOrchestrationModule,
     WorkflowModule,
     SettingsModule,
+    PracticeModule,
   ],
+
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
     { provide: APP_INTERCEPTOR, useClass: CorrelationInterceptor },

@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@learning-os/ui/button';
-import { Compass, BookOpen, Award, User as UserIcon, Shield, Sun, Moon } from 'lucide-react';
+import { Compass, BookOpen, User as UserIcon, Shield, Sun, Moon } from 'lucide-react';
 
 export function Navbar() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -16,7 +16,6 @@ export function Navbar() {
   const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: Compass },
     { label: 'Currículo', href: '/curriculum', icon: BookOpen },
-    { label: 'Práctica', href: '/practice', icon: Award },
     { label: 'Perfil', href: '/profile', icon: UserIcon },
     ...(role === 'admin' ? [{ label: 'Admin', href: '/admin', icon: Shield }] : []),
   ];
@@ -35,8 +34,8 @@ export function Navbar() {
         </Link>
 
         {/* Menu Items (Authenticated) or Auth Actions (Unauthenticated) */}
-        {!isLoading && (
-          isAuthenticated ? (
+        {!isLoading &&
+          (isAuthenticated ? (
             <div className="flex items-center gap-1 md:gap-2">
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
@@ -63,12 +62,15 @@ export function Navbar() {
               <Link href="/login" className="text-xs font-semibold hover:underline md:text-sm">
                 Iniciar Sesión
               </Link>
-              <Button asChild variant="neobrutalism" className="h-8 cursor-pointer px-3 text-xs md:h-9 md:px-4">
+              <Button
+                asChild
+                variant="neobrutalism"
+                className="h-8 cursor-pointer px-3 text-xs md:h-9 md:px-4"
+              >
                 <Link href="/register">Empezar Gratis</Link>
               </Button>
             </div>
-          )
-        )}
+          ))}
 
         {/* Theme Toggle */}
         <div className="flex items-center gap-2">

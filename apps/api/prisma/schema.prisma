@@ -48,7 +48,9 @@ model CurriculumItem {
   updatedAt     DateTime @updatedAt
   prerequisites Prerequisite[] @relation("ItemPrerequisites")
   requiredFor   Prerequisite[] @relation("RequiredFor")
+  levels        CurriculumLevel[]
 }
+
 
 model Prerequisite {
   itemId         String
@@ -58,6 +60,34 @@ model Prerequisite {
 
   @@id([itemId, prerequisiteId])
 }
+
+model CurriculumLevel {
+  id                String               @id
+  curriculumItemId  String
+  curriculumItem    CurriculumItem       @relation(fields: [curriculumItemId], references: [id], onDelete: Cascade)
+  title             String
+  orderIndex        Int
+  status            String               @default("not_generated") // "not_generated" | "generating" | "completed" | "failed"
+  prefetchingStartedAt DateTime?
+  sublevels         CurriculumSublevel[]
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+}
+
+model CurriculumSublevel {
+  id             String           @id
+  levelId        String
+  level          CurriculumLevel  @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  title          String
+  description    String
+  orderIndex     Int
+  contentBlockId String?          @unique
+  contentBlock   ContentBlock?    @relation(fields: [contentBlockId], references: [id], onDelete: SetNull)
+  exercises      Exercise[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
 
 // 3. Content
 model ContentBlock {
@@ -69,7 +99,9 @@ model ContentBlock {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   mediaAssets  MediaAsset[]
+  sublevel     CurriculumSublevel?
 }
+
 
 model MediaAsset {
   id             String       @id
@@ -91,7 +123,10 @@ model Exercise {
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
   templates    SolutionTemplate[]
+  sublevelId   String?
+  sublevel     CurriculumSublevel? @relation(fields: [sublevelId], references: [id], onDelete: Cascade)
 }
+
 
 model SolutionTemplate {
   id         String   @id
@@ -289,4 +324,34 @@ model SystemSetting {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model PracticeSession {
+  id                   String    @id @default(uuid())
+  studentId            String
+  sublevelId           String
+  currentIndex         Int       @default(1)
+  status               String    // "ACTIVE" | "COMPLETED" | "ABANDONED"
+  correctCount         Int       @default(0)
+  isPrefetching        Boolean   @default(false)
+  prefetchingStartedAt DateTime?
+  version              Int       @default(1)
+  conceptsCovered      Json
+  history              Json
+  prefetched           Json
+  activeQuestion       Json?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+model AILog {
+  id          String   @id @default(uuid())
+  sessionId   String?
+  prompt      String
+  rawResponse String
+  latencyMs   Int
+  tokensUsed  Int?
+  error       String?
+  createdAt   DateTime @default(now())
+}
+
 

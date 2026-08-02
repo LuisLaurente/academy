@@ -23,14 +23,19 @@ export const metadata: Metadata = {
   description: 'Walking Skeleton de la plataforma de dominio del conocimiento.',
 };
 
+import { AuthProvider } from '@/context/AuthContext';
+
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={`${fredoka.variable} ${plusJakartaSans.variable}`}>
-        <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
-          {children}
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
+            {children}
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );
 }
+

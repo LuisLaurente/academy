@@ -1,0 +1,19 @@
+# Este archivo sobreescribe docker-compose.yml para desarrollo local.
+# Docker Compose lo aplica automáticamente. NO subir a producción.
+services:
+  web:
+    build:
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3002/api/v1
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3002/api/v1
+      INTERNAL_API_URL: http://api:3001
+
+  api:
+    environment:
+      CORS_ORIGIN: http://localhost:3000
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-flash-latest}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}

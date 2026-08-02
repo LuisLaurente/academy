@@ -8,9 +8,11 @@ import { Background } from '@/components/Background';
 import { Card } from '@/components/Card';
 import { Button } from '@learning-os/ui/button';
 import { KeyRound, Mail, Sparkles, ArrowRight } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -23,12 +25,8 @@ export default function LoginPage() {
 
     try {
       const res = await loginUser({ email, password });
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(
-          'learning_os_user',
-          JSON.stringify({ email: res.email, userId: res.userId, role: res.role }),
-        );
-      }
+      const userInfo = { email: res.email, userId: res.userId, role: res.role };
+      login(userInfo, res.accessToken);
       router.push('/dashboard');
     } catch (err) {
       const errorVal = err as Error;

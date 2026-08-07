@@ -98,7 +98,7 @@ export default function AdminSettingsPage() {
       <Background />
       <Navbar />
 
-      <main className="z-10 mx-auto w-full max-w-4xl flex-1 space-y-8 px-6">
+      <main className="z-10 mx-auto w-full max-w-[1400px] flex-1 space-y-8 px-4">
         {/* Header */}
         <section className="space-y-3">
           <div className="border-border bg-sage-pale text-muted-foreground shadow-neobrutalism-sm inline-flex items-center gap-2 rounded-full border-2 px-3 py-1 text-xs font-bold tracking-wider uppercase">

@@ -17,7 +17,7 @@ export default function HomePage() {
       <Navbar />
 
       {/* Hero Section */}
-      <main className="z-10 mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 items-center gap-12 px-6 py-12 md:grid-cols-12 md:py-24">
+      <main className="z-10 mx-auto grid w-full max-w-[1400px] flex-1 grid-cols-1 items-center gap-12 px-4 py-12 md:grid-cols-12 md:py-24">
         {/* Left Info Column */}
         <section className="space-y-6 md:col-span-7">
           <div className="border-border bg-sage-pale text-muted-foreground shadow-neobrutalism-sm inline-flex items-center gap-2 rounded-full border-2 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase">
@@ -108,7 +108,7 @@ export default function HomePage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-border/20 z-10 mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 border-t-2 px-6 py-6 text-center sm:flex-row">
+      <footer className="border-border/20 z-10 mx-auto flex w-full max-w-[1400px] flex-col items-center justify-between gap-4 border-t-2 px-4 py-6 text-center sm:flex-row">
         <span className="text-muted-foreground text-xs">
           © {new Date().getFullYear()} Learning OS. Diseñado con Soft Neobrutalism.
         </span>

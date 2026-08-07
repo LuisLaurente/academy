@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
@@ -310,7 +311,7 @@ function LivePracticeContent({
       <Background />
       <Navbar />
 
-      <main className="z-10 mx-auto w-full max-w-2xl flex-1 space-y-6 px-6">
+      <main className="z-10 mx-auto w-full max-w-2xl flex-1 space-y-6 px-4">
         {/* Navigation */}
         <button
           onClick={() => router.back()}
@@ -613,7 +614,7 @@ function LegacyPracticeContent({
         setRevealedHintsCount(0);
         return;
       }
-    } catch (e) {
+    } catch {
       // Ignored
     }
     setParsedPrompt(exercise.prompt);
@@ -810,7 +811,7 @@ function LegacyPracticeContent({
       <Background />
       <Navbar />
 
-      <main className="z-10 mx-auto w-full max-w-2xl flex-1 space-y-6 px-6">
+      <main className="z-10 mx-auto w-full max-w-2xl flex-1 space-y-6 px-4">
         <button
           onClick={() => router.back()}
           className="text-muted-foreground hover:text-primary mb-2 inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent text-xs font-bold tracking-wider uppercase transition-colors"

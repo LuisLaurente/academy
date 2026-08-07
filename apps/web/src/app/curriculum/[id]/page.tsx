@@ -605,7 +605,7 @@ export default function CurriculumItemDetailsPage() {
       <Background />
       <Navbar />
 
-      <main className="z-10 mx-auto w-full max-w-6xl flex-1 space-y-6 px-6">
+      <main className="z-10 mx-auto w-full max-w-[1400px] flex-1 space-y-6 px-4">
         <Link
           href="/curriculum"
           className="text-muted-foreground hover:text-primary mb-2 inline-flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase transition-colors"
@@ -632,7 +632,7 @@ export default function CurriculumItemDetailsPage() {
         {/* Two column layout: Left for Roadmap, Right for Theory content */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {/* Column 1: Roadmap Checklist */}
-          <div className="space-y-6 md:col-span-1">
+          <div className="space-y-6 p-1 pr-2 pb-3 md:sticky md:top-28 md:col-span-1 md:max-h-[calc(100vh-140px)] md:overflow-y-auto">
             <Card className="bg-card border-border shadow-neobrutalism border-2 p-6">
               <div className="mb-4 space-y-2">
                 <h2 className="font-display text-lg font-bold tracking-wide">

@@ -122,7 +122,7 @@ export default function DashboardPage() {
       <Background />
       <Navbar />
 
-      <main className="z-10 mx-auto w-full max-w-6xl flex-1 space-y-8 px-6">
+      <main className="z-10 mx-auto w-full max-w-[1400px] flex-1 space-y-8 px-4">
         {/* Welcome Header */}
         <section className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="space-y-1.5">

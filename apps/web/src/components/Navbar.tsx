@@ -30,7 +30,7 @@ export function Navbar() {
 
   return (
     <header className="fixed top-6 right-0 left-0 z-50 px-4">
-      <nav className="border-border bg-card shadow-neobrutalism mx-auto flex max-w-6xl items-center justify-between rounded-full border-2 px-4 py-2 transition-colors md:px-6">
+      <nav className="border-border bg-card shadow-neobrutalism mx-auto flex max-w-[1400px] items-center justify-between rounded-full border-2 px-4 py-2 transition-colors">
         {/* Logo */}
         <Link href="/" className="group flex items-center gap-2 select-none">
           <div className="bg-primary border-border font-display shadow-neobrutalism-sm flex h-8 w-8 items-center justify-center rounded-full border-2 font-bold text-white transition-all group-hover:-translate-y-[1px] group-hover:shadow-[3px_3px_0px_0px_rgba(26,26,26,1)] dark:group-hover:shadow-[3px_3px_0px_0px_rgba(253,251,247,1)]">

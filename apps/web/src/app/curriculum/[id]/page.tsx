@@ -614,25 +614,30 @@ export default function CurriculumItemDetailsPage() {
           Volver al mapa
         </Link>
 
-        {/* Curriculum Card header */}
-        <Card className="bg-muted/30 border-border shadow-neobrutalism-sm flex flex-col justify-between gap-4 border-2 p-6 sm:flex-row sm:items-center">
-          <div className="space-y-1.5">
-            <span className="border-border bg-sage-pale text-foreground rounded-full border px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase">
-              {item.difficulty}
-            </span>
-            <h1 className="font-display text-2xl font-bold tracking-wide">{item.title}</h1>
-            <p className="text-muted-foreground font-sans text-xs">{item.description}</p>
-          </div>
-          <div className="text-muted-foreground bg-card border-border shadow-neobrutalism-sm flex shrink-0 items-center gap-1 rounded-full border-2 px-3 py-1.5 text-xs font-bold">
-            <Clock className="text-primary h-3.5 w-3.5" />
-            {item.estimatedMins} min de estudio
-          </div>
-        </Card>
-
-        {/* Two column layout: Left for Roadmap, Right for Theory content */}
+        {/* Two column layout: Left for Roadmap & Info, Right for Theory content */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {/* Column 1: Roadmap Checklist */}
+          {/* Column 1: Info and Progress Sidebar */}
           <div className="space-y-6 p-1 pr-2 pb-3 md:sticky md:top-28 md:col-span-1 md:max-h-[calc(100vh-140px)] md:overflow-y-auto">
+            {/* Curriculum Info Card */}
+            <Card className="bg-muted/30 border-border shadow-neobrutalism-sm space-y-3 border-2 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <span className="border-border bg-sage-pale text-foreground rounded-full border px-2.5 py-0.5 text-[9px] font-bold tracking-wide uppercase">
+                  {item.difficulty}
+                </span>
+                <div className="text-muted-foreground bg-card border-border shadow-neobrutalism-sm flex items-center gap-1 rounded-full border-2 px-2.5 py-1 text-[10px] font-bold">
+                  <Clock className="text-primary h-3.5 w-3.5" />
+                  {item.estimatedMins} min
+                </div>
+              </div>
+              <div className="space-y-1">
+                <h1 className="font-display text-xl leading-tight font-bold">{item.title}</h1>
+                <p className="text-muted-foreground font-sans text-[11px] leading-snug">
+                  {item.description}
+                </p>
+              </div>
+            </Card>
+
+            {/* Progress Card */}
             <Card className="bg-card border-border shadow-neobrutalism border-2 p-6">
               <div className="mb-4 space-y-2">
                 <h2 className="font-display text-lg font-bold tracking-wide">

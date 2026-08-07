@@ -28,7 +28,7 @@ import { AuthProvider } from '@/context/AuthContext';
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${fredoka.variable} ${plusJakartaSans.variable}`}>
+      <body className={`${fredoka.variable} ${plusJakartaSans.variable}`} suppressHydrationWarning>
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
             {children}

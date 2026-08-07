@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
@@ -12,6 +13,13 @@ export function Navbar() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const role = user?.role || null;
+
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
 
   const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: Compass },
@@ -79,7 +87,9 @@ export function Navbar() {
             className="border-border hover:bg-muted/50 shadow-neobrutalism-sm flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 transition-all active:translate-y-[1px]"
             aria-label="Toggle Theme"
           >
-            {theme === 'dark' ? (
+            {!mounted ? (
+              <span className="block h-4 w-4" />
+            ) : theme === 'dark' ? (
               <Sun className="text-primary h-4 w-4" />
             ) : (
               <Moon className="text-foreground h-4 w-4" />

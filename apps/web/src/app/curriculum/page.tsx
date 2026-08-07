@@ -62,12 +62,14 @@ export default function CurriculumPage() {
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (generating) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMessageIndex(0);
       interval = setInterval(() => {
         setMessageIndex((prev) => (prev + 1) % loadingMessages.length);
       }, 2500);
     }
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [generating]);
 
   const loadCurriculum = async () => {
@@ -84,6 +86,7 @@ export default function CurriculumPage() {
 
   useEffect(() => {
     if (authLoading) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadCurriculum();
   }, [authLoading]);
 
@@ -153,7 +156,7 @@ export default function CurriculumPage() {
       <Background />
       <Navbar />
 
-      <main className="z-10 mx-auto w-full max-w-4xl flex-1 space-y-8 px-6">
+      <main className="z-10 mx-auto w-full max-w-6xl flex-1 space-y-8 px-6">
         {/* Header */}
         <section className="space-y-3">
           <div className="border-border bg-sage-pale text-muted-foreground shadow-neobrutalism-sm inline-flex items-center gap-2 rounded-full border-2 px-3 py-1 text-xs font-bold tracking-wider uppercase">

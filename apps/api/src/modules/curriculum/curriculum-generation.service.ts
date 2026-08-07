@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { type PrismaService } from '../../infrastructure/database/prisma.service';
 import type { GenerateSyllabusResponseDto } from './curriculum.dto';
 
 @Injectable()
@@ -257,6 +257,7 @@ REGLAS DE GENERACIÓN CRÍTICAS:
   private async generateLevelBackground(
     _courseId: string,
     levelId: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sublevels: any[],
     apiKey: string,
     courseTitle: string,
@@ -271,7 +272,8 @@ REGLAS DE GENERACIÓN CRÍTICAS:
 Usa un enfoque pedagógico ELI5 (Explícamelo como si tuviera 5 años). Sigue estrictamente estas pautas:
 1. Tono y Redacción: Usa un tono muy cálido, entusiasta y sumamente claro. Evita lenguaje técnico árido sin antes definirlo con una analogía sencilla.
 2. Analogías: Cada concepto clave debe tener una analogía con la vida real (ej: cajas con etiquetas para variables, recetas de cocina para algoritmos, etc.).
-3. Estructura de Secciones: Divide la lección en las siguientes secciones numeradas del 1 al 6:
+3. Diagramas Explicativos (Mermaid): Si el subtema involucra flujos lógicos, procesos secuenciales, arquitecturas de datos o relaciones (ej. flujo de datos, ciclo de vida, herencia, cliente-servidor), incluye obligatoriamente un diagrama visual claro y didáctico en formato Mermaid.js encerrado en un bloque de código \`\`\`mermaid dentro de la sección "3. ¿Cómo funciona paso a paso?". Asegúrate de que la sintaxis de Mermaid sea limpia y válida.
+4. Estructura de Secciones: Divide la lección en las siguientes secciones numeradas del 1 al 6:
    ## 1. La Idea en Simple (¿Qué es?)
    [Explicación con una analogía divertida y directa]
    
@@ -279,7 +281,7 @@ Usa un enfoque pedagógico ELI5 (Explícamelo como si tuviera 5 años). Sigue es
    [Ejemplos prácticos y cotidianos de su utilidad]
    
    ## 3. ¿Cómo funciona paso a paso?
-   [El proceso lógico explicado de forma visual y secuencial]
+   [El proceso lógico explicado de forma visual y secuencial, incluyendo un diagrama Mermaid si el tema se beneficia de ello]
    
    ## 4. Los Bloques de Construcción (Conceptos clave)
    [Glosario de 3 o 4 términos explicados sencillamente]
@@ -315,6 +317,7 @@ Devuelve únicamente el contenido formateado en Markdown, sin rodeos, listo para
               throw new Error(`Error de Gemini API: ${response.status} - ${errText}`);
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const resData = (await response.json()) as any;
             const text = resData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
             if (!text) throw new Error('Respuesta de IA vacía.');

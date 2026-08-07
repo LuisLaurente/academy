@@ -54,11 +54,23 @@ export const apiEnvironmentSchema = z
     AUTH_COOKIE_DOMAIN: z.string().trim().min(1).optional(),
     // ── AI Provider Keys ──────────────────────────────────────────────────
     // Opcionales: la app funciona sin IA; se requieren para generación de contenido.
-    GEMINI_API_KEY: z.preprocess((val) => val === '' ? undefined : val, z.string().min(1).optional()),
-    OPENAI_API_KEY: z.preprocess((val) => val === '' ? undefined : val, z.string().min(1).optional()),
-    ANTHROPIC_API_KEY: z.preprocess((val) => val === '' ? undefined : val, z.string().min(1).optional()),
+    GEMINI_API_KEY: z.preprocess(
+      (val) => (val === '' ? undefined : val),
+      z.string().min(1).optional(),
+    ),
+    OPENAI_API_KEY: z.preprocess(
+      (val) => (val === '' ? undefined : val),
+      z.string().min(1).optional(),
+    ),
+    ANTHROPIC_API_KEY: z.preprocess(
+      (val) => (val === '' ? undefined : val),
+      z.string().min(1).optional(),
+    ),
     // Modelo por defecto para Gemini (ej: gemini-2.5-flash, gemini-2.0-flash)
-    GEMINI_MODEL: z.preprocess((val) => val === '' ? undefined : val, z.string().min(1).default('gemini-2.5-flash')),
+    GEMINI_MODEL: z.preprocess(
+      (val) => (val === '' ? undefined : val),
+      z.string().min(1).default('gemini-2.5-flash'),
+    ),
   })
   .superRefine((environment, context) => {
     if (environment.NODE_ENV === 'production' && !environment.AUTH_COOKIE_SECURE) {

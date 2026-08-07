@@ -23,13 +23,13 @@
 }
 
 .dark {
-  --background: #141a18; /* Dark sage background */
+  --background: #0a0e0d; /* Deep Sage background */
   --foreground: #fdfbf7;
-  --card: #1d2523;
+  --card: #131a18;
   --card-foreground: #fdfbf7;
   --primary: #ff5a5f;
   --primary-foreground: #ffffff;
-  --muted: #2a3633;
+  --muted: #1f2a27;
   --muted-foreground: #a1b5b1;
   --border: #fdfbf7;
   --ring: #d90429;

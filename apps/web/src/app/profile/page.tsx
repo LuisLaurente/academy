@@ -62,7 +62,7 @@ export default function ProfilePage() {
       <Background />
       <Navbar />
 
-      <main className="z-10 mx-auto w-full max-w-3xl flex-1 space-y-6 px-6">
+      <main className="z-10 mx-auto w-full max-w-4xl flex-1 space-y-6 px-6">
         {/* Profile header */}
         <Card className="border-border bg-card shadow-neobrutalism flex flex-col items-center gap-6 border-2 p-6 sm:flex-row">
           <div className="bg-primary border-border font-display shadow-neobrutalism-sm flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 text-2xl font-bold text-white">

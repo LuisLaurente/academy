@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { type PrismaService } from '../../infrastructure/database/prisma.service';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { PrismaService } from '../../infrastructure/database/prisma.service';
 import type { GenerateSyllabusResponseDto } from './curriculum.dto';
 
 @Injectable()
